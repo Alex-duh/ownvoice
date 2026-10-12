@@ -54,6 +54,13 @@ MAX_SECONDS = float(os.environ.get("OWNVOICE_MAX_SECONDS", 30))
 MAX_UPLOAD_BYTES = int(os.environ.get("OWNVOICE_MAX_BYTES", 25 * 1024 * 1024))
 TUNED_DIR = os.environ.get("OWNVOICE_MODEL", str(ROOT / "runs" / "asr_v1"))
 BASE_MODEL = os.environ.get("OWNVOICE_BASE_MODEL", "openai/whisper-small")
+# Low-latency backbone for live mic mode. whisper-base is ~6x smaller than
+# small, which is the only way to get a response back inside a second or two on
+# free CPU. It is STOCK, not fine-tuned: the adapter was trained on small, so
+# fast mode trades our model away for responsiveness and the UI must say so.
+FAST_MODEL = os.environ.get("OWNVOICE_FAST_MODEL", "openai/whisper-base")
+# Live chunks are short by construction; this cap is a guard, not a budget.
+CHUNK_MAX_SECONDS = float(os.environ.get("OWNVOICE_CHUNK_MAX_SECONDS", 12))
 
 # When a built frontend is present, this process serves the site AND the API
 # from one origin — which is how the deployed Space runs, and why
@@ -100,7 +107,7 @@ def _get_pipe(which: str):
 
     from transformers import pipeline
 
-    model_id = TUNED_DIR if which == "tuned" else BASE_MODEL
+    model_id = {"tuned": TUNED_DIR, "base": BASE_MODEL, "fast": FAST_MODEL}[which]
     if which == "tuned" and not Path(model_id).exists():
         raise HTTPException(
             503,
@@ -135,7 +142,7 @@ def normalize(text: str) -> str:
     return "".join(c for c in text if c not in drop)
 
 
-async def _read_audio(upload: UploadFile) -> np.ndarray:
+async def _read_audio(upload: UploadFile, max_seconds: float | None = None) -> np.ndarray:
     """Decode an upload to mono float32 at 16 kHz, enforcing the caps."""
     raw = await upload.read()
     if not raw:
@@ -164,7 +171,7 @@ async def _read_audio(upload: UploadFile) -> np.ndarray:
         y = librosa.resample(y.astype(np.float64), orig_sr=sr, target_sr=TARGET_SR)
         y = y.astype(np.float32)
 
-    max_samples = int(MAX_SECONDS * TARGET_SR)
+    max_samples = int((max_seconds or MAX_SECONDS) * TARGET_SR)
     if y.size > max_samples:
         y = y[:max_samples]
 
@@ -244,6 +251,7 @@ def health() -> dict:
         or not str(TUNED_DIR).startswith(("/", "C:", ".")),
         "tuned_model_path": TUNED_DIR,
         "base_model": BASE_MODEL,
+        "fast_model": FAST_MODEL,
         # False means the A/B comparison is meaningless — see _tuned_is_distinct.
         "tuned_is_distinct_from_base": _tuned_is_distinct(),
         "simulator_full": pyworld_available(),
@@ -317,6 +325,48 @@ async def transcribe_endpoint(
 
     result["elapsed_ms"] = round((time.perf_counter() - t0) * 1000)
     return result
+
+
+@app.post("/transcribe_chunk")
+async def transcribe_chunk_endpoint(
+    file: UploadFile = File(...),
+    mode: str = Form("tuned"),
+) -> dict:
+    """One segment of live microphone audio -> text.
+
+    Deliberately NOT /transcribe with different arguments. That endpoint runs
+    two models and optionally scores against a reference, which is the right
+    shape for the evidence demo and the wrong shape here: live mode needs one
+    model, no scoring, and the smallest possible round trip. Keeping them
+    separate also means tuning latency here cannot regress the published
+    numbers there.
+
+    `mode` selects the tradeoff the user picked in the UI:
+      tuned - our fine-tuned whisper-small. What the project is about, and
+              slower than real time on free CPU.
+      fast  - stock whisper-base. Responsive, but it is not our model.
+    """
+    if mode not in ("tuned", "fast"):
+        raise HTTPException(400, "mode must be 'tuned' or 'fast'")
+
+    y = await _read_audio(file, max_seconds=CHUNK_MAX_SECONDS)
+    t0 = time.perf_counter()
+    text = _transcribe(mode, y).strip()
+    elapsed_ms = round((time.perf_counter() - t0) * 1000)
+    duration_s = round(len(y) / TARGET_SR, 2)
+
+    return {
+        "transcript": text,
+        "mode": mode,
+        "model": FAST_MODEL if mode == "fast" else TUNED_DIR,
+        "duration_s": duration_s,
+        "elapsed_ms": elapsed_ms,
+        # >1 means the model cannot keep up with speech and the transcript will
+        # fall further behind the longer someone talks. The UI surfaces this
+        # rather than hiding it.
+        "realtime_factor": round(elapsed_ms / 1000 / duration_s, 2) if duration_s else None,
+        "device": _device(),
+    }
 
 
 # ---------------------------------------------------------------------------
