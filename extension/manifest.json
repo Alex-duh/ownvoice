@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "OwnVoice — Live Captions",
+  "version": "0.1.0",
+  "description": "Live captions for dysarthric Mandarin speech. Captions your microphone or any tab's audio using a tone-aware speech model.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "sidePanel",
+    "tabCapture",
+    "storage",
+    "activeTab"
+  ],
+  "optional_permissions": [
+    "offscreen"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "OwnVoice live captions"
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

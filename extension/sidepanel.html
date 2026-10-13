@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OwnVoice</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <header class="bar">
+    <span class="dot" id="dot"></span>
+    <strong class="brand">OwnVoice</strong>
+    <div class="spacer"></div>
+    <div class="group tiny">
+      <button class="lang" data-lang="en">EN</button>
+      <button class="lang" data-lang="zh">中文</button>
+    </div>
+  </header>
+
+  <div class="group full">
+    <button class="src is-on" data-src="mic" id="srcMic">Microphone</button>
+    <button class="src" data-src="tab" id="srcTab">This tab's audio</button>
+  </div>
+
+  <div class="group full">
+    <button class="mode" data-mode="tuned" id="modeTuned">Adapted model</button>
+    <button class="mode" data-mode="fast" id="modeFast">Fast mode</button>
+  </div>
+  <p class="warn" id="fastWarn"></p>
+
+  <div class="controls">
+    <button id="rec" class="rec">Start captions</button>
+    <div class="meter"><div class="meter__fill" id="level"></div></div>
+    <span class="pending" id="pending"></span>
+  </div>
+
+  <p class="err" id="err"></p>
+
+  <ul class="out" id="out"></ul>
+  <p class="empty" id="empty">Captions appear here.</p>
+
+  <footer class="foot">
+    <button id="clear" class="link">Clear</button>
+    <button id="settings" class="link">Settings</button>
+  </footer>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
