@@ -3,8 +3,9 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { scrollToId } from "../lib/scroll";
 
 const LINKS = [
+  { to: "/research", label: "The project" },
   { to: "/how", label: "How it works" },
-  { to: "/method", label: "Research" },
+  { to: "/method", label: "Method" },
   { to: "/code", label: "Code" },
 ];
 

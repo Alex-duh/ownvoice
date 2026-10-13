@@ -86,6 +86,14 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://localhost:4173",
     ],
+    # The Chrome extension's side panel is served from chrome-extension://<id>,
+    # and the id is not knowable until the extension is loaded, so it has to be
+    # matched by pattern. MV3 pages with host_permissions usually bypass CORS
+    # for the hosts they declare, but that is a browser-version-dependent
+    # detail and a blocked preflight here looks identical to a dead server.
+    # Allowing the scheme costs nothing: the API serves no credentials and no
+    # private data, and it binds to localhost.
+    allow_origin_regex=r"^chrome-extension://[a-p]+$",
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
