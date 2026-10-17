@@ -40,10 +40,20 @@ WORKDIR /app
 # CPU-only torch. The default wheel pulls ~2.5 GB of CUDA libraries that are
 # dead weight on a CPU Space and blow past the image size limit.
 COPY backend/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \
-        torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir -r requirements.txt
+# pyworld has no wheel for this platform and compiles from C, so a toolchain
+# must exist at install time. It is added and removed inside one layer so the
+# compiler never ships in the final image. Without this the build dies on
+# "Failed building wheel for pyworld", the same failure this project already
+# hit on Streamlit Cloud.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential python3-dev \
+    && pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir "cython<3" numpy \
+    && pip install --no-cache-dir \
+        torch torchaudio --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt \
+    && apt-get purge -y --auto-remove build-essential python3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --chown=user backend/ ./backend/
 COPY --chown=user src/ ./src/
