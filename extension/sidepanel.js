@@ -20,9 +20,12 @@
 
 const TARGET_SR = 16000;
 const SILENCE_RMS = 0.012;
-const SILENCE_MS = 650;
-const MIN_SEGMENT_S = 1.0;
-const MAX_SEGMENT_S = 8;
+const SILENCE_MS = 420;
+const MIN_SEGMENT_S = 0.8;
+// Dominates perceived lag: total delay is roughly this plus inference.
+// Continuous speech or singing never triggers the pause gate, so this cap
+// is what actually closes a segment, and 8 s felt unusable.
+const MAX_SEGMENT_S = 4;
 
 const DEFAULTS = { apiBase: "http://localhost:7860", mode: "tuned", lang: "en" };
 
@@ -282,6 +285,25 @@ function selectGroup(groupSel, value, attr) {
     b.classList.toggle("is-on", b.dataset[attr] === value));
 }
 
+/**
+ * Push one throwaway second of audio through the model so its weights are
+ * resident before the first real segment arrives. Cold start measured 45 s
+ * against 1.3 s warm, and that 45 s would otherwise land on the opening line
+ * of a demo.
+ */
+async function warmUp() {
+  const n = TARGET_SR;
+  const pcm = new Float32Array(n);
+  for (let i = 0; i < n; i++) pcm[i] = Math.sin(i * 0.02) * 0.05;
+  const fd = new FormData();
+  fd.append("file", encodeWav(pcm, TARGET_SR), "warm.wav");
+  fd.append("mode", cfg.mode);
+  try {
+    await fetch(cfg.apiBase.replace(/\/+$/, "") + "/transcribe_chunk",
+      { method: "POST", body: fd });
+  } catch (e) { /* warm-up is best effort */ }
+}
+
 async function init() {
   cfg = { ...DEFAULTS, ...(await chrome.storage.sync.get(DEFAULTS)) };
   selectGroup(".src", source, "src");
@@ -314,6 +336,7 @@ async function init() {
   // Surface an unreachable backend before the user talks into a void.
   fetch(cfg.apiBase.replace(/\/+$/, "") + "/health")
     .then((r) => { if (!r.ok) throw new Error(); })
+    .then(warmUp)
     .catch(() => setError(t().noApi));
 }
 
