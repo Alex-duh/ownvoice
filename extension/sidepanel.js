@@ -36,7 +36,8 @@ const STR = {
     settings: "Settings", clear: "Clear",
     noApi: "Cannot reach the model server. Open Settings and check the address.",
     micDenied: "Microphone permission denied. Allow it and try again.",
-    tabDenied: "Could not capture this tab's audio. Chrome blocks capture on chrome:// and Web Store pages.",
+    tabDenied: "Could not capture this tab. Open the tab you want captioned, then click the OwnVoice toolbar icon on it before pressing Start.",
+    tabUnsupported: "Chrome does not allow capture on chrome:// pages or the Web Store. Switch to an ordinary page.",
     fastWarn: "Fast mode is stock Whisper, not the adapted model.",
   },
   zh: {
@@ -48,7 +49,8 @@ const STR = {
     settings: "設定", clear: "清除",
     noApi: "無法連線至模型伺服器。請開啟設定並檢查位址。",
     micDenied: "麥克風權限遭拒。請允許後再試一次。",
-    tabDenied: "無法擷取此分頁的聲音。Chrome 不允許擷取 chrome:// 與線上應用程式商店頁面。",
+    tabDenied: "無法擷取此分頁。請先開啟要加字幕的分頁，在該分頁上點擊 OwnVoice 工具列圖示，然後再按開始。",
+    tabUnsupported: "Chrome 不允許擷取 chrome:// 頁面或線上應用程式商店。請切換到一般網頁。",
     fastWarn: "快速模式使用原版 Whisper，並非微調後的模型。",
   },
 };
@@ -157,10 +159,22 @@ async function getStream() {
       audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
     });
   }
-  // Tab audio. getMediaStreamId must be given the tab we want; the side panel
-  // is not itself a tab, so ask the service worker which tab is active.
-  const { streamId, error } = await chrome.runtime.sendMessage({ type: "getTabStreamId" });
-  if (error || !streamId) throw new Error("tabDenied");
+
+  // Ask the worker which tab is in front, then mint the stream id HERE. The id
+  // is only valid in the context that requested it, and this panel is the
+  // context that calls getUserMedia.
+  const res = await chrome.runtime.sendMessage({ type: "getActiveTab" });
+  if (res?.error) throw new Error(res.error);
+  if (!res?.tabId) throw new Error("no-active-tab");
+
+  const streamId = await new Promise((resolve, reject) => {
+    chrome.tabCapture.getMediaStreamId({ targetTabId: res.tabId }, (id) => {
+      const err = chrome.runtime.lastError;
+      if (err || !id) reject(new Error(err?.message || "no-stream"));
+      else resolve(id);
+    });
+  });
+
   return navigator.mediaDevices.getUserMedia({
     audio: {
       mandatory: { chromeMediaSource: "tab", chromeMediaSourceId: streamId },
@@ -173,7 +187,13 @@ async function start() {
   try {
     stream = await getStream();
   } catch (e) {
-    setError(e.message === "tabDenied" ? t().tabDenied : t().micDenied);
+    const m = String(e?.message || e);
+    if (source === "tab") {
+      setError(m === "unsupported-tab" ? t().tabUnsupported
+             : t().tabDenied + " [" + m + "]");
+    } else {
+      setError(t().micDenied);
+    }
     return;
   }
 
