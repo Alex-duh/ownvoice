@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OwnVoice — Captions for speech that is hard to understand</title>
+<meta name="description" content="OwnVoice turns unclear Mandarin speech into readable captions. Free, open source, and it runs on your own computer so no audio is uploaded." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=Figtree:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="nav">
+  <a class="nav__brand" href="#top">Own<span>Voice</span></a>
+  <nav class="nav__links">
+    <a href="#hear" data-i18n="nav.hear">Hear it</a>
+    <a href="#where" data-i18n="nav.where">Where it helps</a>
+    <a href="#use" data-i18n="nav.use">How to use</a>
+    <a href="#works" data-i18n="nav.works">How well it works</a>
+    <a href="#extension" data-i18n="nav.ext">Extension</a>
+  </nav>
+  <button id="langBtn" class="lang" type="button" aria-label="Switch to Chinese">中文</button>
+  <a class="btn btn--sm" href="#start" data-i18n="nav.start">Get started</a>
+</header>
+
+<main id="top">
+
+<!-- ------------------------------------------------------------ hero -->
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow" data-i18n="hero.eyebrow">For people with unclear speech</p>
+    <h1 data-i18n="hero.h1" data-i18n-html>Say it once.<br />Be understood.</h1>
+    <p class="lede" data-i18n="hero.lede">
+      Illness and surgery can make speech hard for other people to follow, and
+      almost impossible for phones and computers to follow. OwnVoice listens and
+      turns Mandarin speech into text that anyone can read.
+    </p>
+    <div class="cta">
+      <a class="btn" href="#hear" data-i18n="hero.cta1">Hear the difference</a>
+      <a class="btn btn--ghost" href="#start" data-i18n="hero.cta2">Get started</a>
+    </div>
+    <p class="hero__note" data-i18n="hero.note">Free. Open source. Your voice never leaves your computer.</p>
+  </div>
+</section>
+
+<!-- --------------------------------------------------------- what it does -->
+<section class="band">
+  <div class="wrap">
+    <h2 data-i18n="what.h2">What it does</h2>
+    <div class="grid3">
+      <article class="card card--cobalt">
+        <h3 data-i18n="what.1h">You speak</h3>
+        <p data-i18n="what.1p">Talk normally into a laptop or phone. No special microphone and no training session first.</p>
+      </article>
+      <article class="card card--violet">
+        <h3 data-i18n="what.2h">It listens</h3>
+        <p data-i18n="what.2p">A speech model built for unclear speech turns what you said into Mandarin text, a phrase at a time.</p>
+      </article>
+      <article class="card card--grass">
+        <h3 data-i18n="what.3h">They read</h3>
+        <p data-i18n="what.3p">The person you are talking to reads it on the screen, or on a projector in a bigger room.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ hear it -->
+<section class="band band--alt" id="hear">
+  <div class="wrap">
+    <h2 data-i18n="hear.h2">Hear the difference</h2>
+    <p class="sub" data-i18n="hear.sub">
+      This is one sentence from a real recording. Use the buttons to hear it get
+      harder to understand, then read what ordinary speech recognition makes of
+      it and what OwnVoice makes of it.
+    </p>
+
+    <div class="demo">
+      <div class="demo__left">
+        <p class="demo__ref">與地主做良性的溝通</p>
+        <p class="demo__gloss" data-i18n="hear.gloss" data-i18n-html>&ldquo;to communicate constructively with the landowner&rdquo;</p>
+
+        <div class="chips" role="group" aria-label="Severity">
+          <button class="chip" data-src="samples/sample-clean.wav" data-i18n="hear.clean">Clear speech</button>
+          <button class="chip" data-src="samples/sample-zh-mild.wav" data-i18n="hear.mild">Mild</button>
+          <button class="chip" data-src="samples/sample-zh-moderate.wav" data-i18n="hear.mod">Moderate</button>
+          <button class="chip is-on" data-src="samples/sample-zh-severe.wav" data-i18n="hear.sev">Severe</button>
+        </div>
+
+        <audio id="player" controls preload="none" src="samples/sample-zh-severe.wav"></audio>
+        <p class="demo__hint" data-i18n="hear.hint">
+          As it gets harder, the pitch flattens and the words stretch out. In
+          Mandarin the pitch is what tells two words apart, so that is exactly
+          the part that carries the meaning.
+        </p>
+      </div>
+
+      <div class="demo__right">
+        <div class="result result--bad">
+          <div class="result__top">
+            <span data-i18n="hear.badTop">Ordinary speech recognition</span>
+            <span data-i18n="hear.badPct">44% wrong</span>
+          </div>
+          <p class="result__text">與地主做人心的構同。</p>
+          <p class="result__note" data-i18n="hear.badNote">The key word is lost. 溝通, meaning communicate, became 構同, which is not a word.</p>
+        </div>
+        <div class="result result--good">
+          <div class="result__top">
+            <span>OwnVoice</span>
+            <span data-i18n="hear.goodPct">11% wrong</span>
+          </div>
+          <p class="result__text">與地主做人性的溝通</p>
+          <p class="result__note" data-i18n="hear.goodNote">The sentence is readable. One word is still wrong, so this is a real improvement rather than a perfect one.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ live demo -->
+<!-- Hidden until a model address is supplied and answers. See live.js. -->
+<section class="band band--dark" id="live" hidden>
+  <div class="wrap">
+    <h2 data-i18n="live.h2">Try it with your own voice</h2>
+    <p class="sub" data-i18n="live.sub">
+      Press start, allow the microphone, and speak Mandarin. Pause between
+      sentences. Each pause ends a phrase and the text appears below.
+    </p>
+    <div class="live">
+      <div class="live__bar">
+        <button id="liveBtn" class="btn" data-i18n="live.btn">Start captions</button>
+        <div class="live__meter"><div id="liveLevel" class="live__meter-fill"></div></div>
+      </div>
+      <p id="liveErr" class="live__err" style="display:none"></p>
+      <div id="liveOut" class="live__out"></div>
+      <p class="live__note" data-i18n="live.note">
+        Your voice is sent to the model, turned into text, and discarded. It is
+        never stored.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- -------------------------------------------------------- where it helps -->
+<section class="band" id="where">
+  <div class="wrap">
+    <h2 data-i18n="where.h2">Where it helps</h2>
+    <p class="sub" data-i18n="where.sub">The same tool, used in very ordinary places.</p>
+    <div class="grid2">
+      <article class="row">
+        <h3 data-i18n="where.1h">At home</h3>
+        <p data-i18n="where.1p">Families stop guessing. Instead of asking someone to repeat themselves four times, the sentence is simply on the screen.</p>
+      </article>
+      <article class="row">
+        <h3 data-i18n="where.2h">At a medical appointment</h3>
+        <p data-i18n="where.2p">A patient can describe their own symptoms instead of relying on a relative to speak for them.</p>
+      </article>
+      <article class="row">
+        <h3 data-i18n="where.3h">On video calls</h3>
+        <p data-i18n="where.3p">The browser extension captions whatever is playing in a tab, so an online consultation or a work meeting is readable live.</p>
+      </article>
+      <article class="row">
+        <h3 data-i18n="where.4h">At a service counter</h3>
+        <p data-i18n="where.4p">Banks, clinics and government offices can read a request rather than turning someone away.</p>
+      </article>
+      <article class="row">
+        <h3 data-i18n="where.5h">In a classroom or a hall</h3>
+        <p data-i18n="where.5p">Full screen mode puts the captions on a projector so a whole room can follow a speaker.</p>
+      </article>
+      <article class="row">
+        <h3 data-i18n="where.6h">For speech therapy</h3>
+        <p data-i18n="where.6p">Therapists get a written record of what was understood, which is hard to judge by ear alone.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ how to use -->
+<section class="band band--dark" id="use">
+  <div class="wrap">
+    <h2 data-i18n="use.h2">How to use it</h2>
+    <ol class="steps">
+      <li>
+        <span class="steps__n">1</span>
+        <div>
+          <h3 data-i18n="use.1h">Open it</h3>
+          <p data-i18n="use.1p">Use the website in a browser, or install the extension if you want to caption video calls and other tabs.</p>
+        </div>
+      </li>
+      <li>
+        <span class="steps__n">2</span>
+        <div>
+          <h3 data-i18n="use.2h">Press start and talk</h3>
+          <p data-i18n="use.2p">Allow the microphone once. Speak normally and pause between sentences. Each pause ends a phrase and sends it to be read.</p>
+        </div>
+      </li>
+      <li>
+        <span class="steps__n">3</span>
+        <div>
+          <h3 data-i18n="use.3h">Show the screen</h3>
+          <p data-i18n="use.3p">Hand over the phone, turn the laptop around, or switch to full screen for a projector. Change the interface to Chinese whenever you like.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- -------------------------------------------------------------- metrics -->
+<section class="band" id="works">
+  <div class="wrap">
+    <h2 data-i18n="works.h2">How well it works</h2>
+    <p class="sub" data-i18n="works.sub">Plain numbers, measured on speakers the system had never heard before.</p>
+    <div class="grid3 stats">
+      <div class="stat stat--grass">
+        <b data-i18n="works.1b">41%</b>
+        <span data-i18n="works.1s">fewer mistakes on the hardest speech, compared with ordinary speech recognition</span>
+      </div>
+      <div class="stat stat--cobalt">
+        <b data-i18n="works.2b">86%</b>
+        <span data-i18n="works.2s">of characters read correctly overall, up from 81%</span>
+      </div>
+      <div class="stat stat--marigold">
+        <b data-i18n="works.3b">Under 1s</b>
+        <span data-i18n="works.3s">to caption a second of speech, so captions keep up with talking</span>
+      </div>
+    </div>
+    <p class="honest" data-i18n="works.honest" data-i18n-html>
+      <b>Being straight with you.</b> These results were measured on recordings we
+      degraded on purpose to imitate unclear speech, not yet on recordings from
+      patients. It works, and we are honest that clinical testing is the next
+      step rather than something already finished. Accuracy also varies from
+      person to person, so try it before relying on it.
+    </p>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ extension -->
+<section class="band band--alt" id="extension">
+  <div class="wrap">
+    <h2 data-i18n="ext.h2">The Chrome extension</h2>
+    <p class="sub" data-i18n="ext.sub">
+      The website captions your own microphone. The extension also captions the
+      audio of any browser tab, so a video call, an online class or a recorded
+      meeting becomes readable while it plays. A web page cannot do that.
+    </p>
+
+    <div class="ext">
+      <div class="ext__steps">
+        <h3 data-i18n="ext.install">Install it</h3>
+        <p class="ext__warn" data-i18n="ext.warn">
+          It is not in the Chrome Web Store yet, so it installs from a folder.
+          That takes a minute and is completely normal for an extension you
+          build yourself.
+        </p>
+        <ol class="ext__list">
+          <li data-i18n="ext.s1" data-i18n-html>Download the project and find the <code>extension</code> folder.</li>
+          <li data-i18n="ext.s2" data-i18n-html>Open <code>chrome://extensions</code> and turn on <b>Developer mode</b>, top right.</li>
+          <li data-i18n="ext.s3" data-i18n-html>Click <b>Load unpacked</b> and choose that folder.</li>
+          <li data-i18n="ext.s4" data-i18n-html>Open the tab you want captioned, then click the OwnVoice icon <i>on that tab</i>.</li>
+          <li data-i18n="ext.s5" data-i18n-html>Pick <b>Microphone</b> or <b>This tab&rsquo;s audio</b>, then press start.</li>
+        </ol>
+        <a class="btn" href="https://github.com/andrewshih0407/ownvoice" data-i18n="ext.btn">Download the project</a>
+      </div>
+
+      <div class="ext__notes">
+        <div class="ext__note">
+          <h4 data-i18n="ext.n1h">Two capture modes</h4>
+          <p data-i18n="ext.n1p">Your microphone, or the sound coming out of the tab you are on.</p>
+        </div>
+        <div class="ext__note">
+          <h4 data-i18n="ext.n2h">English or Chinese</h4>
+          <p data-i18n="ext.n2p">Switch the whole panel between English and 中文 at any time.</p>
+        </div>
+        <div class="ext__note">
+          <h4 data-i18n="ext.n3h">It needs the model running</h4>
+          <p data-i18n="ext.n3p">The extension shows the captions but does not contain the model, so the recogniser has to be running somewhere. That can be your own computer.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- -------------------------------------------------------------- privacy -->
+<section class="band band--alt">
+  <div class="wrap narrow">
+    <h2 data-i18n="priv.h2">Your voice stays yours</h2>
+    <p class="big" data-i18n="priv.p">
+      The speech is processed on your own computer and then discarded. Nothing is
+      uploaded, nothing is stored, and there is no account to create. That is
+      also why a clinic can try it without a data protection review first.
+    </p>
+  </div>
+</section>
+
+<!-- -------------------------------------------------------------- get it -->
+<section class="band band--dark" id="start">
+  <div class="wrap narrow center">
+    <h2 data-i18n="start.h2">Get started</h2>
+    <p class="big" data-i18n="start.p">
+      OwnVoice is free and open source. Use it, read how it works, or build on it.
+    </p>
+    <div class="cta cta--center">
+      <a class="btn" href="https://github.com/andrewshih0407/ownvoice" data-i18n="start.btn">Get the code</a>
+    </div>
+    <p class="hero__note" data-i18n="start.note">Mandarin today. Taiwanese Hokkien and Cantonese are next.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <span>OwnVoice</span>
+    <span data-i18n="foot.lic">Open source, MIT licensed</span>
+  </div>
+</footer>
+
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+<script src="live.js"></script>
+</body>
+</html>
