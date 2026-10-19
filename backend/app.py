@@ -93,7 +93,16 @@ app.add_middleware(
     # detail and a blocked preflight here looks identical to a dead server.
     # Allowing the scheme costs nothing: the API serves no credentials and no
     # private data, and it binds to localhost.
-    allow_origin_regex=r"^chrome-extension://[a-p]+$",
+    # The public site is on Vercel and the API is reached through an ngrok
+    # tunnel, so both of those origins have to be allowed alongside the
+    # extension. Note that CORS is a browser rule, not an access control: once
+    # the tunnel is open, anything that knows the URL can POST to it directly.
+    allow_origin_regex=(
+        r"^(chrome-extension://[a-p]+"
+        r"|https://ownvoice-three\.vercel\.app"
+        r"|https://[a-z0-9-]+\.ngrok(-free)?\.(app|io|dev)"
+        r"|http://(localhost|127\.0\.0\.1):\d+)$"
+    ),
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
