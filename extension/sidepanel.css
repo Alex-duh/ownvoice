@@ -1,46 +1,90 @@
-:root{ --ink:#14110f; --cream:#f4efe6; --cobalt:#3e6be0; --soft:#4a443d;
-       --rule:#d8d4cc; }
+/* OwnVoice side panel.
+ *
+ * Brand palette from the main site. Fonts stay on the system stack rather than
+ * Google Fonts: an MV3 extension page should not depend on a network fetch to
+ * render, and the panel has to look right offline.
+ *
+ * The panel is narrow and read at a glance, so the caption text is the only
+ * thing given real size. Controls are deliberately quiet.
+ */
+
+:root{
+  --cream:#f4efe6; --cream-2:#efe7d9; --ink:#14110f; --soft:#4a443d;
+  --cobalt:#3e6be0; --tangerine:#ee6c34; --rule:#ded6c8; --white:#fff;
+}
 *{box-sizing:border-box}
-body{margin:0;padding:12px;background:var(--cream);color:var(--ink);
-  font:14px/1.5 system-ui,-apple-system,"Noto Sans TC","PingFang TC",sans-serif;
-  display:flex;flex-direction:column;min-height:100vh}
-.bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.brand{font-size:15px;letter-spacing:-.01em}
-.brand::after{content:"";}
+html,body{height:100%}
+body{
+  margin:0; padding:14px 14px 12px;
+  background:var(--cream); color:var(--ink);
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;
+  display:flex; flex-direction:column; min-height:100vh;
+}
+
+/* ------------------------------------------------------------------- bar */
+.bar{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.brand{font-size:16px;font-weight:800;letter-spacing:-.02em}
 .spacer{flex:1}
-.dot{width:9px;height:9px;border-radius:50%;background:#bbb;flex:0 0 auto}
-.dot.is-live{background:#e23b3b;animation:pulse 1.4s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.dot{width:9px;height:9px;border-radius:50%;background:#c8c1b6;flex:0 0 auto}
+.dot.is-live{background:var(--tangerine);box-shadow:0 0 0 3px rgba(238,108,52,.2);
+  animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* --------------------------------------------------------------- buttons */
+button{font:inherit;cursor:pointer;border-radius:999px;
+  transition:background .12s,color .12s,border-color .12s}
 .group{display:flex;gap:6px;margin-bottom:8px}
 .group.full button{flex:1}
-.group.tiny button{padding:4px 9px;font-size:11px}
-button{font:inherit;font-weight:600;cursor:pointer;border-radius:99px;
-  border:1px solid var(--rule);background:#fff;color:var(--ink);padding:8px 12px}
-button.is-on{background:var(--ink);color:var(--cream);border-color:var(--ink)}
-button:disabled{opacity:.5;cursor:default}
-.controls{display:flex;align-items:center;gap:10px;margin:10px 0}
-.rec{flex:0 0 auto;background:var(--cobalt);color:#fff;border-color:var(--cobalt)}
-.rec.is-rec{background:var(--ink);border-color:var(--ink)}
-.meter{flex:1;height:7px;border-radius:99px;background:#e2ddd3;overflow:hidden}
-.meter__fill{height:100%;width:0;background:var(--cobalt);transition:width .08s linear}
-.pending{font-size:12px;color:var(--soft);min-width:10px}
-.warn,.err{margin:0 0 8px;font-size:12px;line-height:1.45;padding:8px 10px;
-  border-radius:9px}
-.warn{background:#fdf0d5;display:none}
-.err{background:#fde2e2;color:#8c1d1d;display:none}
+.group.tiny button{padding:4px 10px;font-size:11.5px;font-weight:700}
+.group button{padding:9px 12px;font-size:13.5px;font-weight:600;
+  border:1px solid var(--rule);background:var(--white);color:var(--soft)}
+.group button:hover:not(.is-on){border-color:var(--ink);color:var(--ink)}
+.group button.is-on{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+button:disabled{opacity:.45;cursor:default}
+
+/* -------------------------------------------------------------- controls */
+.controls{display:flex;align-items:center;gap:10px;margin:12px 0 10px}
+.rec{flex:0 0 auto;padding:11px 20px;font-size:14.5px;font-weight:700;
+  background:var(--cobalt);color:#fff;border:1px solid var(--cobalt)}
+.rec:hover{filter:brightness(1.07)}
+.rec.is-rec{background:var(--tangerine);border-color:var(--tangerine)}
+.meter{flex:1;height:6px;border-radius:999px;background:#e3dccf;overflow:hidden}
+.meter__fill{height:100%;width:0;background:var(--cobalt);transition:width .07s linear}
+.pending{font-size:11.5px;color:var(--soft);min-width:8px;
+  font-variant-numeric:tabular-nums}
+
+/* --------------------------------------------------------------- notices */
+.warn,.err{margin:0 0 9px;font-size:12.5px;line-height:1.45;padding:9px 11px;
+  border-radius:10px;border:1px solid transparent}
+.warn{background:#fdf3dc;border-color:#f0dfae;color:#6b5312;display:none}
+.err{background:#fde6e2;border-color:#f3c6bd;color:#8c2d16;display:none}
+
+/* -------------------------------------------------------------- captions */
 .out{list-style:none;margin:0;padding:0;flex:1;overflow-y:auto;
-  display:flex;flex-direction:column;gap:7px}
+  display:flex;flex-direction:column;gap:8px}
 .out:empty+.empty{display:block}
 .out:not(:empty)+.empty{display:none}
-.empty{color:var(--soft);font-size:13px;margin:6px 0}
-.seg{background:#fff;border:1px solid var(--rule);border-radius:10px;
-  padding:9px 11px}
-.seg.is-pending{opacity:.6;font-style:italic}
-.seg.is-error{background:#fde2e2;border-color:#f0b4b4}
-.seg__text{display:block;font-size:16px;line-height:1.5;font-weight:600}
-.seg__meta{display:block;margin-top:3px;font-size:11px;color:var(--soft);
-  font-variant-numeric:tabular-nums}
-.foot{display:flex;gap:14px;padding-top:10px;margin-top:8px;
+.empty{color:var(--soft);font-size:13px;margin:8px 2px}
+
+.seg{background:var(--white);border:1px solid var(--rule);
+  border-left:3px solid var(--cobalt);border-radius:10px;padding:10px 12px;
+  animation:rise .18s ease-out}
+@keyframes rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.seg.is-pending{opacity:.6;border-left-color:#c8c1b6}
+.seg.is-error{background:#fde6e2;border-color:#f3c6bd;border-left-color:var(--tangerine)}
+.seg__text{display:block;font-size:17px;line-height:1.5;font-weight:600;
+  letter-spacing:-.01em;word-break:break-word}
+.seg.is-pending .seg__text{font-style:italic;font-weight:400;font-size:14px}
+.seg__meta{display:block;margin-top:4px;font-size:10.5px;color:var(--soft);
+  font-variant-numeric:tabular-nums;letter-spacing:.02em}
+
+/* ---------------------------------------------------------------- footer */
+.foot{display:flex;gap:14px;padding-top:11px;margin-top:10px;
   border-top:1px solid var(--rule)}
-.link{border:0;background:none;padding:0;color:var(--soft);font-size:12px;
-  text-decoration:underline}
+.link{border:0;background:none;padding:0;color:var(--soft);font-size:11.5px;
+  text-decoration:underline;text-underline-offset:2px}
+.link:hover{color:var(--ink)}
+
+@media (prefers-reduced-motion:reduce){
+  .seg,.dot.is-live{animation:none}
+}

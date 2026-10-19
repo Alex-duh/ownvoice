@@ -20,12 +20,17 @@
 
 const TARGET_SR = 16000;
 const SILENCE_RMS = 0.012;
-const SILENCE_MS = 420;
-const MIN_SEGMENT_S = 0.8;
+const SILENCE_MS = 320;
+const MIN_SEGMENT_S = 0.6;
 // Dominates perceived lag: total delay is roughly this plus inference.
 // Continuous speech or singing never triggers the pause gate, so this cap
 // is what actually closes a segment, and 8 s felt unusable.
-const MAX_SEGMENT_S = 4;
+const MAX_SEGMENT_S = 2.5;
+// Inference is serialised, so if it runs slower than speech the backlog
+// grows without bound and captions drift further behind every phrase.
+// Past this many waiting segments we drop the oldest instead, which loses
+// words but keeps the screen close to what is being said now.
+const MAX_QUEUED = 2;
 
 const DEFAULTS = { apiBase: "http://localhost:7860", mode: "tuned", lang: "en" };
 
@@ -34,7 +39,7 @@ const STR = {
     mic: "Microphone", tab: "This tab's audio",
     start: "Start captions", stop: "Stop",
     waiting: "Captions appear here.", listening: "Listening…",
-    transcribing: "transcribing…", silence: "(silence)",
+    transcribing: "transcribing…", silence: "(silence)", skipped: "(skipped, falling behind)",
     tuned: "Adapted model", fast: "Fast mode",
     settings: "Settings", clear: "Clear",
     noApi: "Cannot reach the model server. Open Settings and check the address.",
@@ -47,7 +52,7 @@ const STR = {
     mic: "麥克風", tab: "此分頁的聲音",
     start: "開始字幕", stop: "停止",
     waiting: "字幕會顯示在這裡。", listening: "聆聽中…",
-    transcribing: "辨識中…", silence: "（無語音）",
+    transcribing: "辨識中…", silence: "（無語音）", skipped: "（已略過，處理不及）",
     tuned: "微調模型", fast: "快速模式",
     settings: "設定", clear: "清除",
     noApi: "無法連線至模型伺服器。請開啟設定並檢查位址。",
@@ -64,6 +69,8 @@ let recording = false;
 let ctx = null, stream = null, node = null, passthrough = null;
 let buf = [], silentMs = 0, voiced = false, segId = 0, pending = 0;
 let queue = Promise.resolve();
+const waiting = [];
+const dropped = new Set();
 
 const $ = (id) => document.getElementById(id);
 const t = () => STR[cfg.lang];
@@ -125,6 +132,15 @@ function send(pcm, rate) {
   addSegment(id);
   pending++; renderStatus();
 
+  // Shed the oldest backlog rather than falling further behind.
+  waiting.push(id);
+  while (waiting.length > MAX_QUEUED) {
+    const drop = waiting.shift();
+    dropped.add(drop);
+    fillSegment(drop, t().skipped, "", false);
+    pending--; renderStatus();
+  }
+
   const wav = encodeWav(downsample(pcm, rate), TARGET_SR);
   const fd = new FormData();
   fd.append("file", wav, "chunk.wav");
@@ -135,13 +151,18 @@ function send(pcm, rate) {
       method: "POST", body: fd,
     }))
     .then(async (r) => {
+      if (dropped.has(id)) return;
       if (!r.ok) throw new Error("HTTP " + r.status);
       const j = await r.json();
       fillSegment(id, j.transcript,
         `${durationS.toFixed(1)}s · ${(j.elapsed_ms / 1000).toFixed(1)}s`, false);
     })
-    .catch((e) => fillSegment(id, String(e.message || e), "", true))
-    .finally(() => { pending--; renderStatus(); });
+    .catch((e) => { if (!dropped.has(id)) fillSegment(id, String(e.message || e), "", true); })
+    .finally(() => {
+      const i = waiting.indexOf(id);
+      if (i >= 0) waiting.splice(i, 1);
+      if (!dropped.has(id)) { pending--; renderStatus(); }
+    });
 }
 
 function flush(rate) {
