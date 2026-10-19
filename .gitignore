@@ -59,3 +59,6 @@ runs/train_en.log
 
 # Personal data - NEVER commit (public repo)
 docs/SUBMISSION-PRIVATE.md
+.claude/
+$null
+.fuse_hidden*

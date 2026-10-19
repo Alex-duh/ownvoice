@@ -3,7 +3,7 @@
 **Tone-aware speech recognition for Mandarin speakers with dysarthria.**
 
 🌐 **Live site:** https://anonymous6623-ownvoice.static.hf.space
-🤖 **Model:** https://huggingface.co/anonymous6623/ownvoice-asr
+**Model:** https://huggingface.co/anonymous6623/ownvoice-asr
 📄 Entry for the 2026 Presidential Hackathon International Track — *Digital
 Inclusion in the AI Era*.
 

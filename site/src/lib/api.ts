@@ -72,3 +72,41 @@ export async function simulate(
   }
   return res.blob();
 }
+
+export type LiveMode = "tuned" | "fast";
+
+export interface ChunkResult {
+  transcript: string;
+  mode: LiveMode;
+  model: string;
+  duration_s: number;
+  elapsed_ms: number;
+  /** >1 means inference is slower than speech, so the transcript falls behind. */
+  realtime_factor: number | null;
+  device: string;
+}
+
+/**
+ * Transcribe one segment of live microphone audio.
+ *
+ * Separate from `transcribe` on purpose: live mode runs a single model with no
+ * reference scoring, so it must not share a code path with the A/B evidence
+ * demo, where changing the request shape would change published numbers.
+ */
+export async function transcribeChunk(
+  wav: Blob,
+  mode: LiveMode
+): Promise<ChunkResult> {
+  const fd = new FormData();
+  fd.append("file", wav, "chunk.wav");
+  fd.append("mode", mode);
+  const res = await fetch(`${API_BASE}/transcribe_chunk`, {
+    method: "POST",
+    body: fd,
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`Live transcription failed (${res.status}): ${detail}`);
+  }
+  return res.json();
+}

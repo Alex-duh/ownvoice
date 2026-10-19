@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { API_BASE, checkHealth, simulate, transcribe } from "../lib/api";
 import { Reveal } from "../components/Reveal";
+import { LiveTranscribe } from "../components/LiveTranscribe";
+import { SampleEvidence } from "../components/SampleEvidence";
 
 // The live demo does two things the model can actually do today:
 //
@@ -181,6 +183,12 @@ export function Demo() {
           instead of shipping it. The adaptation result here is Mandarin.
         </Reveal>
 
+        {/* Works for every visitor with no server: pre-rendered audio and
+            recorded model output. Everything below it needs an API. */}
+        <Reveal>
+          <SampleEvidence />
+        </Reveal>
+
         {/* Public visitors get the embedded live model. The local-API controls
             below only appear when a backend is actually reachable. */}
         {health !== "ok" && (
@@ -188,13 +196,21 @@ export function Demo() {
             {!liveOpen ? (
               <div className="live__cta">
                 <div>
-                  <h3 className="live__title">Run the model</h3>
+                  <h3 className="live__title">Run the model yourself</h3>
                   <p className="live__note">
-                    Loads the real fine-tuned model. It runs on a free tier
-                    that sleeps when idle, so if it has been quiet it may spend
-                    a minute waking up — we start waking it as soon as you open
-                    this page. First transcription also downloads ~1&nbsp;GB of
-                    weights; after that each one takes 20–60&nbsp;s on free CPU.
+                    Upload your own Mandarin clip and run the fine-tuned model
+                    on it. It runs on a free tier that sleeps when idle, so if
+                    it has been quiet it may spend a minute waking up — we
+                    start waking it as soon as you open this page. First
+                    transcription also downloads ~1&nbsp;GB of weights; after
+                    that each one takes 20–60&nbsp;s on free CPU.
+                  </p>
+                  <p className="live__note">
+                    <strong>Live microphone transcription</strong> and the
+                    full-screen stage view are built and run against a local
+                    model server. They are not in this hosted demo because the
+                    free static host cannot run Python; see the repository to
+                    run them yourself.
                   </p>
                 </div>
                 <button className="btn" onClick={() => setLiveOpen(true)}>
@@ -225,6 +241,12 @@ export function Demo() {
           <Reveal className="health health--ok">
             <span className="health__dot" />
             Local model server online — ASR ready
+          </Reveal>
+        )}
+
+        {health === "ok" && (
+          <Reveal style={{ marginTop: "28px" }}>
+            <LiveTranscribe />
           </Reveal>
         )}
 

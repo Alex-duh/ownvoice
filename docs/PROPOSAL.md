@@ -5,7 +5,7 @@ Theme: *Digital Inclusion in the AI Era*
 
 🌐 https://anonymous6623-ownvoice.static.hf.space
 💻 https://github.com/andrewshih0407/ownvoice
-🤖 https://huggingface.co/anonymous6623/ownvoice-asr
+https://huggingface.co/anonymous6623/ownvoice-asr
 
 > Every figure below is measured, not projected. Sources:
 > `docs/results.md`, `data/train/matched_eval.json`.
