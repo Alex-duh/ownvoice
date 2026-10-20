@@ -99,7 +99,7 @@ app.add_middleware(
     # the tunnel is open, anything that knows the URL can POST to it directly.
     allow_origin_regex=(
         r"^(chrome-extension://[a-p]+"
-        r"|https://ownvoice-three\.vercel\.app"
+        r"|https://ownvoice(-three)?\.vercel\.app"
         r"|https://[a-z0-9-]+\.ngrok(-free)?\.(app|io|dev)"
         r"|http://(localhost|127\.0\.0\.1):\d+)$"
     ),
