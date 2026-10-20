@@ -1,41 +1,32 @@
 import React from "react";
 import { AbsoluteFill, Audio, Sequence, staticFile, interpolate } from "remotion";
-import { TransitionSeries, linearTiming } from "@remotion/transitions";
+import { TransitionSeries, linearTiming, springTiming } from "@remotion/transitions";
 import { slide } from "@remotion/transitions/slide";
-import { wipe } from "@remotion/transitions/wipe";
-import { iris } from "@remotion/transitions/iris";
 import { fade } from "@remotion/transitions/fade";
-import { pushCut } from "@remotion/transitions/push-cut";
-import { Intro, BuySell, Problem, LogoAnswer, Site, Install, Call, Results, Privacy, End, SITE_IN, SITE_OUT, callFrames, callFrameOf } from "./scenes";
+import { MAI_CUES, PROBLEM_CUES, Intro, BuySell, Problem, LogoAnswer, Site, Install, Call, Results, Privacy, End, SITE_IN, SITE_OUT, callFrames, callFrameOf } from "./scenes";
 import callMeta from "../public/footage/call.json";
 import siteMeta from "../public/footage/site.json";
 
-const T = 18; // transition length, frames
-const PROBLEM_AUDIO_AT = 62;
+const T = 22; // transition length, frames
 
 const scenes = [
-  { id: "intro", d: 165, el: <Intro /> },
+  { id: "intro", d: 150, el: <Intro /> },
   { id: "buysell", d: 210, el: <BuySell /> },
-  { id: "problem", d: 300, el: <Problem audioAt={PROBLEM_AUDIO_AT} /> },
+  { id: "problem", d: 345, el: <Problem /> },
   { id: "logo", d: 150, el: <LogoAnswer /> },
   { id: "site", d: Math.round((SITE_OUT - SITE_IN) * 30), el: <Site /> },
   { id: "install", d: 105, el: <Install /> },
   { id: "call", d: callFrames.a + callFrames.b + callFrames.c, el: <Call /> },
-  { id: "results", d: 270, el: <Results /> },
+  { id: "results", d: 255, el: <Results /> },
   { id: "privacy", d: 150, el: <Privacy /> },
-  { id: "end", d: 210, el: <End /> },
+  { id: "end", d: 195, el: <End /> },
 ];
-const presentations = [
-  wipe({ direction: "from-left" }),
-  slide({ direction: "from-bottom" }),
-  iris({ width: 1920, height: 1080 }),
-  slide({ direction: "from-right" }),
-  pushCut(),
-  slide({ direction: "from-right" }),
-  wipe({ direction: "from-top-left" }),
-  slide({ direction: "from-bottom" }),
-  fade(),
-];
+// Smooth: crossfades, plus two soft slides into the product footage.
+const presentations = [fade(), fade(), fade(), slide({ direction: "from-bottom" }), fade(), slide({ direction: "from-right" }), fade(), fade(), fade()];
+const isSlide = presentations.map((_, i) => i === 3 || i === 5);
+const timings = presentations.map((_, i) => isSlide[i]
+  ? springTiming({ config: { damping: 200 }, durationInFrames: T })
+  : linearTiming({ durationInFrames: T }));
 
 // Absolute start frame of each scene (transitions overlap neighbours by T).
 export const starts = scenes.map((_, i) => scenes.slice(0, i).reduce((n, sc) => n + sc.d, 0) - i * T);
@@ -45,11 +36,11 @@ export const TOTAL = starts[starts.length - 1] + scenes[scenes.length - 1].d;
 /* ------------------------------------------------------------- soundtrack */
 type Cue = { at: number; src: string; vol?: number };
 const sfx: Cue[] = [];
-starts.slice(1).forEach((st, i) => sfx.push({ at: st - 6, src: i === 2 ? "sfx/whoosh.wav" : i % 2 ? "sfx/whoosh_soft.wav" : "sfx/whoosh.wav", vol: 0.55 }));
+starts.slice(1).forEach((st, i) => sfx.push({ at: st - 4, src: isSlide[i] ? "sfx/whoosh.wav" : "sfx/whoosh_soft.wav", vol: isSlide[i] ? 0.5 : 0.28 }));
 sfx.push({ at: at("logo") + 4, src: "sfx/chime.wav", vol: 0.5 });
 sfx.push({ at: at("logo") + 76, src: "sfx/success.wav", vol: 0.55 });
-sfx.push({ at: at("problem") + 192, src: "sfx/pop.wav", vol: 0.5 });
-sfx.push({ at: at("problem") + 262, src: "sfx/whoosh_soft.wav", vol: 0.35 });
+sfx.push({ at: at("problem") + 250, src: "sfx/pop.wav", vol: 0.45 });
+sfx.push({ at: at("problem") + 304, src: "sfx/whoosh_soft.wav", vol: 0.3 });
 [18, 26, 34].forEach((d) => sfx.push({ at: at("install") + 10 + (d - 18) * 0.9, src: "sfx/pop.wav", vol: 0.45 }));
 [0, 1, 2].forEach((i) => sfx.push({ at: at("results") + 60 + i * 8, src: "sfx/pop.wav", vol: 0.45 }));
 [0, 1, 2].forEach((i) => sfx.push({ at: at("privacy") + 12 + i * 7, src: "sfx/pop.wav", vol: 0.45 }));
@@ -64,13 +55,17 @@ sfx.push({ at: at("problem") + 262, src: "sfx/whoosh_soft.wav", vol: 0.35 });
 const audioStart = (callMeta as any).audioZero ?? (callMeta.events as any[]).find((e) => e.kind === "audio-start").t;
 const siteAudio = (siteMeta.events as any[]).find((e) => e.label === "sample-zh-severe").t;
 const voice = {
-  problem: { at: at("problem") + PROBLEM_AUDIO_AT, len: Math.round(5.25 * 30) },
+  healthy: { at: at("problem") + PROBLEM_CUES.healthy, len: Math.round(2.21 * 30) },
+  problem: { at: at("problem") + PROBLEM_CUES.patient, len: Math.round(5.25 * 30) },
   site: { at: at("site") + Math.round((siteAudio - SITE_IN) * 30), len: Math.round(7.36 * 30) },
   // The fake microphone starts playing when capture opens, i.e. at Start.
   call: { at: at("call") + Math.round(callFrameOf(audioStart)), len: Math.round(33.5 * 30) },
 };
 // Speech windows the music ducks under.
 const ducks: [number, number][] = [
+  [at("buysell") + MAI_CUES.mai3, at("buysell") + MAI_CUES.mai4 + 12],
+  [at("buysell") + MAI_CUES.mai3_sev, at("buysell") + MAI_CUES.mai4_sev + 18],
+  [voice.healthy.at, voice.healthy.at + voice.healthy.len],
   [voice.problem.at, voice.problem.at + voice.problem.len],
   [voice.site.at, voice.site.at + voice.site.len],
   ...(callMeta.marks as number[][]).map(([a, b]) => [voice.call.at + a * 30, voice.call.at + b * 30] as [number, number]),
@@ -89,12 +84,16 @@ export const Demo: React.FC = () => (
       {scenes.map((sc, i) => (
         <React.Fragment key={sc.id}>
           <TransitionSeries.Sequence durationInFrames={sc.d}>{sc.el}</TransitionSeries.Sequence>
-          {i < scenes.length - 1 && <TransitionSeries.Transition presentation={presentations[i] as any} timing={linearTiming({ durationInFrames: T })} />}
+          {i < scenes.length - 1 && <TransitionSeries.Transition presentation={presentations[i] as any} timing={timings[i]} />}
         </React.Fragment>
       ))}
     </TransitionSeries>
 
-    <Audio src={staticFile("audio/carefree.wav")} volume={musicVol} />
+    <Audio src={staticFile("audio/music.wav")} volume={musicVol} />
+    {(Object.entries(MAI_CUES) as [string, number][]).map(([k, f]) => (
+      <Sequence key={k} from={at("buysell") + f} durationInFrames={30}><Audio src={staticFile(`audio/${k}.wav`)} volume={1} /></Sequence>
+    ))}
+    <Sequence from={voice.healthy.at}><Audio src={staticFile("audio/healthy.wav")} volume={1} /></Sequence>
     <Sequence from={voice.problem.at}><Audio src={staticFile("audio/problem.wav")} volume={1} /></Sequence>
     <Sequence from={voice.site.at} durationInFrames={Math.min(voice.site.len, at("install") - voice.site.at)}><Audio src={staticFile("audio/site-severe.wav")} volume={1} /></Sequence>
     <Sequence from={voice.call.at} durationInFrames={voice.call.len}><Audio src={staticFile("audio/call.wav")} volume={1} /></Sequence>

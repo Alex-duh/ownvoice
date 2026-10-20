@@ -37,6 +37,19 @@ export const Intro: React.FC = () => {
 };
 
 /* ============================================================ 2. buy / sell */
+// Frames (scene-local) at which each syllable is heard; Demo.tsx plays the audio.
+export const MAI_CUES = { mai3: 18, mai4: 36, mai3_sev: 150, mai4_sev: 172 };
+const Speaker: React.FC<{ at: number[] }> = ({ at }) => {
+  const f = useCurrentFrame();
+  const pulse = Math.max(0, ...at.map((a) => interpolate(f - a, [0, 4, 22], [0, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })));
+  return (
+    <div style={{ margin: "14px auto 0", width: 54, height: 54, borderRadius: "50%", display: "grid", placeItems: "center",
+      background: `rgba(244,239,230,${0.12 + pulse * 0.5})`, transform: `scale(${1 + pulse * 0.18})` }}>
+      <svg width={26} height={26} viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="#f4efe6" /><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="#f4efe6" strokeWidth={1.8} fill="none" strokeLinecap="round" opacity={0.4 + pulse * 0.6} /></svg>
+    </div>
+  );
+};
+
 export const BuySell: React.FC = () => {
   const f = useCurrentFrame();
   const flatten = interpolate(f, [100, 145], [0, 0.8], ease);
@@ -56,6 +69,7 @@ export const BuySell: React.FC = () => {
             <div style={{ font: `600 230px/1 ${F.zh}` }}>{w.han}</div>
             <div style={{ font: `700 50px ${F.body}`, marginTop: 10 }}>{w.py}</div>
             <div style={{ font: `500 30px ${F.body}`, color: "#cfc7b8" }}>{w.gl}</div>
+            <Speaker at={i ? [MAI_CUES.mai4, MAI_CUES.mai4_sev] : [MAI_CUES.mai3, MAI_CUES.mai3_sev]} />
             <svg width={380} height={150} style={{ marginTop: 18, overflow: "visible" }}>
               <path d={tonePath(w.tone.f, flatten, 380, 150)} fill="none" stroke={w.tone.color} strokeWidth={13} strokeLinecap="round" pathLength={1} strokeDasharray={1} strokeDashoffset={1 - (i ? draw4 : draw3)} />
             </svg>
@@ -71,7 +85,7 @@ export const BuySell: React.FC = () => {
           <Words text="Now they sound almost the same." start={150} stagger={2} style={{ justifyContent: "center", font: `500 34px ${F.body}`, color: "#cfc7b8", marginTop: 14 }} />
         </div>
       </div>
-      <div style={{ position: "absolute", right: 50, bottom: 34, font: `500 17px ${F.body}`, color: "#8a8277" }}>Tone shapes: illustration</div>
+      <div style={{ position: "absolute", right: 50, bottom: 34, font: `500 17px ${F.body}`, color: "#8a8277" }}>Tone shapes: illustration. Syllables: synthetic voice, then the same with simulated dysarthria.</div>
     </AbsoluteFill>
   );
 };
@@ -94,40 +108,51 @@ const Waveform: React.FC<{ src: string; start: number; color: string }> = ({ src
   );
 };
 
-export const Problem: React.FC<{ audioAt: number }> = ({ audioAt }) => {
+// Scene-local frames at which the two real recordings start (Demo.tsx plays them).
+export const PROBLEM_CUES = { healthy: 48, patient: 122 };
+const VoiceRow: React.FC<{ label: string; sub: string; src: string; at: number; color: string; start: number }> = ({ label, sub, src, at, color, start }) => (
+  <Pop start={start} style={{ display: "flex", alignItems: "center", gap: 22, marginTop: 14 }}>
+    <div style={{ width: 62, height: 62, borderRadius: "50%", background: color, display: "grid", placeItems: "center", flex: "0 0 auto" }}>
+      <svg width={24} height={24} viewBox="0 0 24 24"><path d="M7 4 L20 12 L7 20 Z" fill="#fff" /></svg>
+    </div>
+    <div style={{ width: 230 }}>
+      <div style={{ font: `700 24px ${F.body}` }}>{label}</div>
+      <div style={{ font: `500 18px ${F.body}`, color: C.inkSoft }}>{sub}</div>
+    </div>
+    <Waveform src={src} start={at} color={color} />
+  </Pop>
+);
+
+export const Problem: React.FC = () => {
   const f = useCurrentFrame();
   const typed = "接我到你那大点";
-  const nType = Math.floor(interpolate(f, [205, 250], [0, typed.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
-  const strike = interpolate(f, [258, 270], [0, 1], ease);
+  const nType = Math.floor(interpolate(f, [262, 296], [0, typed.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  const strike = interpolate(f, [302, 314], [0, 1], ease);
   return (
     <AbsoluteFill>
       <Iridescent />
-      <AbsoluteFill style={{ padding: "110px 140px" }}>
-        <Words text="After a stroke, Parkinson’s or mouth-cancer surgery, speech can become hard to understand." start={0} stagger={2} style={{ font: `900 64px/1.08 ${F.display}`, letterSpacing: "-0.02em", maxWidth: 1500 }} />
-        <Words text="The person knows exactly what they mean. Speech recognition does not." start={30} stagger={2} style={{ font: `500 32px/1.4 ${F.body}`, color: C.inkSoft, marginTop: 22 }} />
-        <div style={{ display: "flex", gap: 36, marginTop: 64 }}>
-          <Pop start={audioAt - 12} style={{ flex: 1, background: "#fff", borderRadius: 28, padding: "30px 36px", boxShadow: "0 24px 60px rgba(20,17,15,.10)" }}>
-            <div style={{ font: `700 18px ${F.body}`, letterSpacing: "0.14em", color: C.inkSoft }}>HE SAID</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 26, marginTop: 10 }}>
-              <div style={{ width: 70, height: 70, borderRadius: "50%", background: C.cobalt, display: "grid", placeItems: "center" }}>
-                <svg width={28} height={28} viewBox="0 0 24 24"><path d="M7 4 L20 12 L7 20 Z" fill="#fff" /></svg>
-              </div>
-              <Waveform src="audio/problem.wav" start={audioAt} color={C.cobalt} />
-            </div>
-            <div style={{ font: `600 54px ${F.zh}`, marginTop: 12 }}>給我聲音再大點</div>
-            <div style={{ font: `500 26px ${F.body}`, color: C.inkSoft }}>“Turn the sound up for me.”</div>
+      <AbsoluteFill style={{ padding: "90px 140px" }}>
+        <Words text="After a stroke, Parkinson’s or mouth-cancer surgery, speech can become hard to understand." start={0} stagger={2} style={{ font: `900 60px/1.08 ${F.display}`, letterSpacing: "-0.02em", maxWidth: 1500 }} />
+        <div style={{ display: "flex", gap: 36, marginTop: 50 }}>
+          <Pop start={30} style={{ flex: 1.25, background: "#fff", borderRadius: 28, padding: "28px 34px", boxShadow: "0 24px 60px rgba(20,17,15,.10)" }}>
+            <div style={{ font: `700 18px ${F.body}`, letterSpacing: "0.14em", color: C.inkSoft }}>SAME SENTENCE, TWO REAL SPEAKERS</div>
+            <div style={{ font: `600 50px ${F.zh}`, marginTop: 8 }}>給我聲音再大點</div>
+            <div style={{ font: `500 24px ${F.body}`, color: C.inkSoft }}>“Turn the sound up for me.”</div>
+            <VoiceRow label="Healthy speaker" sub="2.2 seconds" src="audio/healthy.wav" at={PROBLEM_CUES.healthy} color={C.grass} start={36} />
+            <VoiceRow label="With dysarthria" sub="5.3 seconds" src="audio/problem.wav" at={PROBLEM_CUES.patient} color={C.cobalt} start={110} />
           </Pop>
-          <Pop start={192} style={{ flex: 1, background: "#fff", borderRadius: 28, padding: "30px 36px", boxShadow: "0 24px 60px rgba(20,17,15,.10)", border: `3px solid ${C.red}33` }}>
+          <Pop start={250} style={{ flex: 1, background: "#fff", borderRadius: 28, padding: "28px 34px", boxShadow: "0 24px 60px rgba(20,17,15,.10)", border: `3px solid ${C.red}33` }}>
             <div style={{ font: `700 18px ${F.body}`, letterSpacing: "0.14em", color: C.red }}>STANDARD SPEECH RECOGNITION HEARD</div>
-            <div style={{ position: "relative", font: `600 54px ${F.zh}`, marginTop: 96, color: C.red, display: "inline-block" }}>
+            <div style={{ font: `500 20px ${F.body}`, color: C.inkSoft, marginTop: 6 }}>the speaker with dysarthria as</div>
+            <div style={{ position: "relative", font: `600 54px ${F.zh}`, marginTop: 70, color: C.red, display: "inline-block" }}>
               {typed.slice(0, nType)}<span style={{ opacity: f % 16 < 8 && nType < typed.length ? 1 : 0 }}>|</span>
               <div style={{ position: "absolute", left: 0, top: "52%", height: 5, background: C.red, width: `${strike * 100}%`, borderRadius: 3 }} />
             </div>
             <div style={{ font: `500 26px ${F.body}`, color: C.inkSoft, opacity: strike }}>“Pick me up at your place, big dot.”</div>
           </Pop>
         </div>
-        <div style={{ font: `500 17px ${F.body}`, color: "#8a8277", marginTop: 20 }}>
-          Real speaker with dysarthria (MDSC / AISHELL-6B, CC BY-NC 4.0). Stock Whisper-small output, unedited.
+        <div style={{ font: `500 17px ${F.body}`, color: "#8a8277", marginTop: 18 }}>
+          Real recordings: MDSC / AISHELL-6B (CC BY-NC 4.0). Stock Whisper-small output, unedited.
         </div>
       </AbsoluteFill>
     </AbsoluteFill>
@@ -178,19 +203,21 @@ const camera = (keys: Key[], t: number) => {
 };
 
 /* ============================================================== 5. website */
-export const SITE_IN = 2.4, SITE_OUT = 27.5;
+const sev = (label: string) => (siteMeta.events as any[]).find((e) => e.label === label).t as number;
+const H = sev("hear-cta"), CH = sev("chip-severe"), AU = sev("sample-zh-severe"), RS = sev("results"), ZH = sev("lang-zh"), ENG = sev("lang-en"), DL = sev("download");
+export const SITE_IN = sev("hero") + 0.2, SITE_OUT = DL + 1.0;
 const siteKeys: Key[] = [
-  { t: 2.4, x: 960, y: 540, z: 1 }, { t: 3.4, x: 760, y: 560, z: 1.18 }, { t: 4.3, x: 760, y: 560, z: 1.18 },
-  { t: 5.6, x: 960, y: 540, z: 1 }, { t: 6.6, x: 520, y: 640, z: 1.45 }, { t: 9.8, x: 520, y: 660, z: 1.45 },
-  { t: 11.2, x: 1340, y: 650, z: 1.42 }, { t: 18.2, x: 1340, y: 660, z: 1.42 }, { t: 19.2, x: 960, y: 540, z: 1.0 },
-  { t: 22.6, x: 960, y: 540, z: 1.0 }, { t: 25.6, x: 960, y: 540, z: 1.0 }, { t: 26.4, x: 470, y: 690, z: 1.55 }, { t: 27.5, x: 470, y: 690, z: 1.6 },
+  { t: SITE_IN, x: 960, y: 540, z: 1 }, { t: H - 0.5, x: 760, y: 560, z: 1.18 }, { t: H + 0.4, x: 760, y: 560, z: 1.18 },
+  { t: H + 1.7, x: 960, y: 540, z: 1 }, { t: CH - 0.3, x: 520, y: 640, z: 1.45 }, { t: AU + 0.6, x: 520, y: 660, z: 1.45 },
+  { t: RS + 0.4, x: 1340, y: 650, z: 1.42 }, { t: ZH - 0.8, x: 1340, y: 660, z: 1.42 }, { t: ZH + 0.2, x: 960, y: 540, z: 1.0 },
+  { t: ENG + 0.3, x: 960, y: 540, z: 1.0 }, { t: DL - 1.0, x: 960, y: 540, z: 1.0 }, { t: DL - 0.2, x: 470, y: 690, z: 1.55 }, { t: SITE_OUT, x: 470, y: 690, z: 1.6 },
 ];
 const siteLabels = [
-  { from: 3.0, to: 6.2, text: "The website: open a link, nothing to install" },
-  { from: 6.8, to: 11.0, text: "Hear what dysarthria does to one sentence" },
-  { from: 11.2, to: 18.4, text: "Ordinary recognition: 44% wrong · OwnVoice: 11% wrong" },
-  { from: 19.2, to: 22.5, text: "The whole site in 中文 with one click" },
-  { from: 23.4, to: 27.5, text: "One-click download for the Chrome extension" },
+  { from: SITE_IN + 0.6, to: H + 2.0, text: "The website: open a link, nothing to install" },
+  { from: H + 2.2, to: RS, text: "Hear what dysarthria does to one sentence" },
+  { from: RS + 0.2, to: ZH - 0.4, text: "Ordinary recognition: 44% wrong · OwnVoice: 11% wrong" },
+  { from: ZH, to: ENG + 0.4, text: "The whole site in 中文 with one click" },
+  { from: ENG + 0.6, to: SITE_OUT, text: "One-click download for the Chrome extension" },
 ];
 
 export const Site: React.FC = () => {
@@ -275,12 +302,14 @@ const callKeys: Key[] = (() => {
   ];
 })();
 const GLOSS = [
-  "“Turn on the air conditioning.”",
-  "“I need the temperature set to 25.”",
+  "“Pause it, please.”",
+  "“Turn the volume down.”",
   "“Open the curtains.”",
-  "“The volume’s too low for me.”",
-  "“Turn the volume up a little for me.”",
+  "“Turn off the screen for me.”",
+  "“Play some music.”",
 ];
+
+const EN: React.FC<{ children: React.ReactNode }> = ({ children }) => <div style={{ font: `500 20px ${F.body}`, color: C.inkSoft, fontStyle: "italic", marginTop: 1 }}>{children}</div>;
 
 const CallLayer: React.FC<{ tIn: number; rate?: number; badge: React.ReactNode }> = ({ tIn, rate = 1, badge }) => {
   const f = useCurrentFrame();
@@ -314,15 +343,18 @@ const CallLayer: React.FC<{ tIn: number; rate?: number; badge: React.ReactNode }
           <div style={{ position: "absolute", left: 40, top: 110, background: "rgba(255,255,255,.96)", borderRadius: 18, padding: "16px 22px", boxShadow: "0 16px 40px rgba(0,0,0,.3)", maxWidth: 820 }}>
             <div style={{ font: `700 16px ${F.body}`, letterSpacing: "0.12em", color: C.inkSoft }}>HE SAID</div>
             <div style={{ font: `600 30px ${F.zh}`, color: C.ink, marginTop: 2 }}>{r.ref_tw}</div>
+            {r.en_ref && <EN>{r.en_ref}</EN>}
             <div style={{ font: `700 16px ${F.body}`, letterSpacing: "0.12em", color: stockOk ? C.inkSoft : C.red, marginTop: 10 }}>STANDARD RECOGNITION, SAME AUDIO</div>
             <div style={{ font: `600 30px ${F.zh}`, color: stockOk ? C.ink : C.red, marginTop: 2 }}>{r.stock}{stockOk ? " ✓" : ""}</div>
+            {r.en_stock && !stockOk && <EN>{r.en_stock}</EN>}
             <div style={{ font: `700 16px ${F.body}`, letterSpacing: "0.12em", color: C.cobalt, marginTop: 10 }}>OWNVOICE, LIVE</div>
             <div style={{ font: `600 30px ${F.zh}`, color: C.ink, marginTop: 2 }}>{r.live}{oursOk ? <span style={{ color: C.grass }}> ✓</span> : ""}</div>
+            {r.en_live && !oursOk && <EN>{r.en_live}</EN>}
           </div>
         );
       })()}
-      <div style={{ position: "absolute", left: 40, bottom: 18, font: `500 16px ${F.body}`, color: "rgba(255,255,255,.75)" }}>
-        Real OwnVoice extension and model, recorded live on a laptop CPU. Voice: a real speaker with dysarthria (MDSC / AISHELL-6B, CC BY-NC 4.0), sentences selected from his recordings, fed in as the microphone.
+      <div style={{ position: "absolute", left: 40, bottom: 18, maxWidth: 1380, font: `500 16px ${F.body}`, color: "rgba(255,255,255,.75)" }}>
+        Recorded live: real OwnVoice extension and model on a laptop CPU. Voice: a real speaker with dysarthria (MDSC / AISHELL-6B, CC BY-NC 4.0). Selected sentences; averages on the results slide.
       </div>
     </AbsoluteFill>
   );
@@ -396,14 +428,14 @@ export const Results: React.FC = () => {
             <Pop start={130} style={{ position: "absolute", left: 140, right: 140, bottom: 70, background: "#fff", borderRadius: 22, padding: "18px 28px", boxShadow: "0 18px 50px rgba(20,17,15,.10)", display: "flex", alignItems: "center", gap: 28 }}>
               <div style={{ font: `800 22px ${F.body}`, letterSpacing: "0.12em", color: C.grass, whiteSpace: "nowrap" }}>FIRST TEST ON REAL PATIENTS</div>
               <div style={{ font: `600 28px ${F.body}` }}>
-                {all.speakers} speakers with dysarthria, {all.n} recordings: character errors {pct(all.stock_cer)} → <span style={{ color: C.cobalt }}>{pct(all.ours_cer)}</span> with OwnVoice
+                {all.n} recordings from {all.speakers} real speakers with dysarthria: <b>{Math.round(all.rel_cer_cut * 100)}% fewer errors</b> ({pct(all.stock_cer)} → <span style={{ color: C.cobalt }}>{pct(all.ours_cer)}</span>). Better for {all.speakers_improved} of {all.speakers} speakers.
               </div>
             </Pop>
           );
         })() : null}
         <div style={{ position: "absolute", left: 140, bottom: 34, font: `500 17px ${F.body}`, color: "#8a8277" }}>
           {(mdsc as any).ready
-            ? "Bars: fine-tuned Whisper-small on simulated dysarthria, unseen speakers. Real patients: MDSC / AISHELL-6B (CC BY-NC 4.0), 20 random sentences per speaker, no selection."
+            ? "Bars: simulated dysarthria, unseen speakers. Real patients: MDSC / AISHELL-6B (CC BY-NC 4.0), 20 random recordings per speaker, no selection; healthy speakers improved too, so part of the gain is not dysarthria-specific."
             : "Fine-tuned Whisper-small. Simulated dysarthria; test speakers never used in training. Testing with real patients is next."}
         </div>
       </AbsoluteFill>
@@ -454,7 +486,7 @@ export const End: React.FC = () => {
           Andrew Shih · Alexander Du · Srihari Kumaresan · Luis Cruz Mondragon<br />2026 Presidential Hackathon · International Track</div></Pop>
       </AbsoluteFill>
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 26, textAlign: "center", font: `500 15px ${F.body}`, color: "#8a8277" }}>
-        Music: “Carefree” by Kevin MacLeod (incompetech.com), CC BY 4.0. Voices: Mozilla Common Voice (CC0).
+        Music: “Your Breath” by Eugenio Mininni (Mixkit). Patient voice: MDSC / AISHELL-6B (CC BY-NC 4.0).
       </div>
     </AbsoluteFill>
   );

@@ -24,6 +24,11 @@ def summary(rs):
          "stock_ster": float(st.mean()), "ours_ster": float(ot.mean()),
          "rel_cer_cut": float((s.mean() - o.mean()) / s.mean()) if s.mean() else 0.0,
          "ours_better": int((o < s).sum()), "ours_worse": int((o > s).sum()), "ties": int((o == s).sum())}
+    per_spk = defaultdict(list)
+    for r in rs:
+        per_spk[r["speaker"]].append(r["stock_cer"] - r["ours_cer"])
+    d["speakers_improved"] = int(sum(np.mean(v) > 0 for v in per_spk.values()))
+    d["speakers_worse"] = int(sum(np.mean(v) < 0 for v in per_spk.values()))
     diff = s - o
     d["wilcoxon_p"] = float(wilcoxon(s, o).pvalue) if np.any(diff != 0) and len(rs) >= 10 else None
     return d

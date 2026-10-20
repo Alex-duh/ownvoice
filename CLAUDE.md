@@ -59,6 +59,14 @@ Alexander Du.
   segments, drops the oldest segment when more than 2 are queued, and warms the model on open
   (cold start is about 45 s, warm about 1.3 s). It needs the same backend.
 
+## Real-patient result (2026-10-20, docs/results.md top section)
+
+On 420 random recordings from 21 real Mandarin speakers with dysarthria (MDSC), OwnVoice made
+**25% fewer character errors** than stock whisper-small (0.760 → 0.568, p ≈ 1e-15) and was better
+for 20 of 21 speakers. **Healthy controls improved too** (0.245 → 0.097), so part of the gain is
+not dysarthria-specific. Absolute error is still high (57% overall, 94% for severe speakers).
+Quote this with the caveat every time.
+
 ## Headline numbers (from docs/results.md; all on SIMULATED dysarthria)
 
 | | stock Whisper CER | OwnVoice CER | relative cut |

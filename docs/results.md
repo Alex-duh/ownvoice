@@ -1,5 +1,38 @@
 # Results log
 
+> ## First test on REAL patients (MDSC / AISHELL-6B), 2026-10-20
+>
+> Stock whisper-small vs OwnVoice on real Mandarin dysarthric speech: 21 speakers (cerebral palsy,
+> Wilson's disease), expert intelligibility 22–94%. No MDSC audio was ever used in training. For
+> each speaker, 20 random non-wake-word recordings (seed 0, no selection), plus 5 random healthy
+> controls × 20. The analysis was pre-registered in `src/eval_mdsc.py` before results existed.
+> Reproduce: `python src/eval_mdsc.py --root <extracted>` then `python src/summarize_mdsc.py runs/mdsc_eval.jsonl`.
+>
+> | group | clips | speakers | stock CER | OwnVoice CER | relative cut | better / worse / tie | Wilcoxon p | stock STER | OwnVoice STER |
+> |---|---|---|---|---|---|---|---|---|---|
+> | dysarthric (all) | 420 | 21 | 0.760 | 0.568 | +25% | 194 / 75 / 151 | 1.02e-15 | 0.121 | 0.089 |
+> | mild | 220 | 11 | 0.444 | 0.318 | +28% | 92 / 50 / 78 | 3.53e-05 | 0.098 | 0.068 |
+> | moderate | 80 | 4 | 1.015 | 0.700 | +31% | 46 / 12 / 22 | 2.22e-06 | 0.117 | 0.070 |
+> | severe | 120 | 6 | 1.169 | 0.938 | +20% | 56 / 13 / 51 | 2.2e-07 | 0.166 | 0.141 |
+> | control | 100 | 5 | 0.245 | 0.097 | +61% | 31 / 16 / 53 | 0.000283 | 0.020 | 0.032 |
+>
+> **Headline:** 25% fewer character errors on real dysarthric speech (CER 0.760 → 0.568, paired
+> Wilcoxon p ≈ 1e-15). OwnVoice was better for 20 of 21 speakers and slightly worse for 1 (DM0017,
+> a mild speaker). The gain holds in every pre-registered band (mild 28%, moderate 31%, severe 20%).
+>
+> **Caveats, all of which go wherever this number is quoted:**
+> - **Healthy controls improved too** (CER 0.245 → 0.097). Part of the gain is therefore *not*
+>   dysarthria-specific. It is plausibly domain adaptation: Taiwanese-Mandarin text, short
+>   utterances, and fewer stock hallucinations (stock emits English and invents words; CER > 1 in
+>   the moderate and severe bands). This design cannot separate the dysarthria-specific part.
+>   That would need a model fine-tuned on clean speech only.
+> - Absolute error stays high: about 57% overall and 94% in the severe band. This is a step, not
+>   a usable caption for severe speakers yet.
+> - The material is smart-home commands, not conversation, and the etiologies (CP, Wilson's) are
+>   not the stroke and oral-cancer population the pitch targets.
+> - Tone (STER) improved overall (0.121 → 0.089). Exploratory; not tested for significance.
+
+
 > ## STER alignment defect — found, fixed, conclusion survives
 >
 > Found while verifying the live demo. STER paired syllables **by position**, so

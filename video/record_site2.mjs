@@ -18,7 +18,8 @@ const ctx = await browser.newContext({ viewport: { width: 1440, height: 810 }, d
 const page = await ctx.newPage();
 await page.goto(URL, { waitUntil: "networkidle" });
 await page.evaluate(() => document.fonts.ready);
-// Mute the page's own audio element; the soundtrack adds the clip in sync.
+// The page's audio is left unmuted (so its player looks normal); headless
+// capture records no sound, and the soundtrack adds the clip in sync.
 await page.addStyleTag({ content: `
   #ovcursor{position:fixed;left:0;top:0;width:24px;height:24px;z-index:99999;pointer-events:none;
     transform:translate(var(--x,700px),var(--y,520px));transition:transform var(--d,0s) cubic-bezier(.35,.1,.25,1);
@@ -30,7 +31,6 @@ await page.addStyleTag({ content: `
 await page.evaluate(() => {
   document.body.insertAdjacentHTML("beforeend",
     `<div id="ovripple"></div><svg id="ovcursor" viewBox="0 0 28 28"><path d="M6 3 L6 23 L11 18.4 L14.4 25.6 L17.6 24.2 L14.3 17.2 L21 17.2 Z" fill="#000" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>`);
-  const pl = document.getElementById("player"); if (pl) pl.muted = true;
   window.moveCursor = (x, y, ms) => { const c = document.getElementById("ovcursor");
     c.style.setProperty("--d", (ms || 0) + "ms"); c.style.setProperty("--x", (x - 5) + "px"); c.style.setProperty("--y", (y - 2.5) + "px"); };
   window.ripple = (x, y) => { const r = document.getElementById("ovripple"); r.style.left = x + "px"; r.style.top = y + "px";

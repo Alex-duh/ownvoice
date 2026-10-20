@@ -64,20 +64,20 @@ export const ToneStack: React.FC<{ flatten: number; draw: number; width?: number
 
 /* ------------------------------------------------------------ kinetic text */
 
-// Words rise, unblur and fade in one after another.
+// Each word rises into place from behind its own line (a mask reveal), eased
+// out with no overshoot and no blur.
+const easeOut = Easing.bezier(0.16, 1, 0.3, 1);
 export const Words: React.FC<{ text: string; start?: number; stagger?: number; style?: React.CSSProperties; color?: string; highlight?: Record<string, string> }> = ({ text, start = 0, stagger = 3, style, highlight = {} }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
   const words = text.split(" ");
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "0 0.28em", ...style }}>
       {words.map((w, i) => {
-        const p = spring({ frame: frame - start - i * stagger, fps, config: { damping: 18, stiffness: 140 } });
+        const p = interpolate(frame - start - i * stagger, [0, 22], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOut });
         return (
-          <span key={i} style={{
-            display: "inline-block", opacity: p, transform: `translateY(${(1 - p) * 0.55}em)`,
-            filter: `blur(${(1 - p) * 10}px)`, color: highlight[w.replace(/[.,]/g, "")] ?? undefined,
-          }}>{w}</span>
+          <span key={i} style={{ display: "inline-block", overflow: "hidden", paddingBottom: "0.08em", marginBottom: "-0.08em" }}>
+            <span style={{ display: "inline-block", transform: `translateY(${(1 - p) * 105}%)`, opacity: Math.min(1, p * 1.6), color: highlight[w.replace(/[.,]/g, "")] ?? undefined }}>{w}</span>
+          </span>
         );
       })}
     </div>
@@ -90,20 +90,22 @@ export const useIn = (start: number, cfg = { damping: 16, stiffness: 120 }) => {
   return spring({ frame: frame - start, fps, config: cfg });
 };
 
-export const Pop: React.FC<{ start: number; children: React.ReactNode; style?: React.CSSProperties; from?: number }> = ({ start, children, style, from = 0.85 }) => {
-  const p = useIn(start, { damping: 13, stiffness: 160 });
-  return <div style={{ opacity: Math.min(1, p * 1.4), transform: `scale(${from + (1 - from) * p}) translateY(${(1 - p) * 30}px)`, ...style }}>{children}</div>;
+// Cards glide up and settle; eased, no bounce.
+export const Pop: React.FC<{ start: number; children: React.ReactNode; style?: React.CSSProperties; from?: number }> = ({ start, children, style, from = 0.96 }) => {
+  const frame = useCurrentFrame();
+  const p = interpolate(frame - start, [0, 24], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOut });
+  return <div style={{ opacity: p, transform: `translateY(${(1 - p) * 36}px) scale(${from + (1 - from) * p})`, ...style }}>{children}</div>;
 };
 
 /* -------------------------------------------------------------------- logo */
 
 export const Logo: React.FC<{ size?: number; dark?: boolean; start?: number }> = ({ size = 150, dark, start = 0 }) => {
   const frame = useCurrentFrame();
-  const p = useIn(start, { damping: 14, stiffness: 110 });
+  const p = interpolate(frame - start, [0, 26], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: easeOut });
   const letters = "OwnVoice".split("");
   return (
     <div style={{ display: "flex", alignItems: "center", gap: size * 0.22 }}>
-      <Img src={staticFile("ov-icon.png")} style={{ width: size * 0.95, height: size * 0.95, transform: `scale(${p}) rotate(${(1 - p) * -90}deg)` }} />
+      <Img src={staticFile("ov-icon.png")} style={{ width: size * 0.95, height: size * 0.95, transform: `scale(${0.6 + 0.4 * p})`, opacity: p }} />
       <div style={{ font: `900 ${size}px ${F.display}`, letterSpacing: "-0.04em", color: dark ? C.cream : C.ink, display: "flex" }}>
         {letters.map((ch, i) => {
           const q = interpolate(frame - start - 6 - i * 2, [0, 10], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) });
