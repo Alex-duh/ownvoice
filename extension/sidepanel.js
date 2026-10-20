@@ -20,12 +20,17 @@
 
 const TARGET_SR = 16000;
 const SILENCE_RMS = 0.012;
-const SILENCE_MS = 320;
+// Dysarthric speech is slow and has long gaps between words, so a short pause
+// gate splits sentences mid-word. 500 ms still ends a phrase at a real pause.
+const SILENCE_MS = 500;
 const MIN_SEGMENT_S = 0.6;
 // Dominates perceived lag: total delay is roughly this plus inference.
 // Continuous speech or singing never triggers the pause gate, so this cap
-// is what actually closes a segment, and 8 s felt unusable.
-const MAX_SEGMENT_S = 2.5;
+// is what actually closes a segment, and 8 s felt unusable. 2.5 s was too
+// short: severe-simulated sentences run 3.5-6 s, so every one was cut in two,
+// the halves were misrecognised (計程車 -> 技術), and the extra requests built a
+// backlog that dropped the first sentence entirely. Measured 2026-10-19.
+const MAX_SEGMENT_S = 6;
 // Inference is serialised, so if it runs slower than speech the backlog
 // grows without bound and captions drift further behind every phrase.
 // Past this many waiting segments we drop the oldest instead, which loses
@@ -70,6 +75,7 @@ let ctx = null, stream = null, node = null, passthrough = null;
 let buf = [], silentMs = 0, voiced = false, segId = 0, pending = 0;
 let queue = Promise.resolve();
 const waiting = [];
+let inFlight = null;
 const dropped = new Set();
 
 const $ = (id) => document.getElementById(id);
@@ -132,10 +138,13 @@ function send(pcm, rate) {
   addSegment(id);
   pending++; renderStatus();
 
-  // Shed the oldest backlog rather than falling further behind.
+  // Shed the oldest backlog rather than falling further behind. Only segments
+  // still waiting are shed: the one already being transcribed costs nothing
+  // more to finish, and throwing its result away loses words for no gain.
   waiting.push(id);
-  while (waiting.length > MAX_QUEUED) {
-    const drop = waiting.shift();
+  while (waiting.filter((w) => w !== inFlight).length > MAX_QUEUED) {
+    const drop = waiting.find((w) => w !== inFlight);
+    waiting.splice(waiting.indexOf(drop), 1);
     dropped.add(drop);
     fillSegment(drop, t().skipped, "", false);
     pending--; renderStatus();
@@ -147,11 +156,17 @@ function send(pcm, rate) {
   fd.append("mode", cfg.mode);
 
   queue = queue
-    .then(() => fetch(cfg.apiBase.replace(/\/+$/, "") + "/transcribe_chunk", {
-      method: "POST", body: fd,
-    }))
+    .then(() => {
+      // A shed segment must not reach the server, or shedding never
+      // shortens the backlog it exists to shorten.
+      if (dropped.has(id)) return null;
+      inFlight = id;
+      return fetch(cfg.apiBase.replace(/\/+$/, "") + "/transcribe_chunk", {
+        method: "POST", body: fd,
+      });
+    })
     .then(async (r) => {
-      if (dropped.has(id)) return;
+      if (!r || dropped.has(id)) return;
       if (!r.ok) throw new Error("HTTP " + r.status);
       const j = await r.json();
       fillSegment(id, j.transcript,
@@ -159,6 +174,7 @@ function send(pcm, rate) {
     })
     .catch((e) => { if (!dropped.has(id)) fillSegment(id, String(e.message || e), "", true); })
     .finally(() => {
+      if (inFlight === id) inFlight = null;
       const i = waiting.indexOf(id);
       if (i >= 0) waiting.splice(i, 1);
       if (!dropped.has(id)) { pending--; renderStatus(); }
@@ -166,7 +182,11 @@ function send(pcm, rate) {
 }
 
 function flush(rate) {
+  const hadSpeech = voiced;
   const chunks = buf; buf = []; voiced = false; silentMs = 0;
+  // A buffer closed by the length cap with nobody speaking is pure silence.
+  // The server rejects it with HTTP 400, which then shows up as a caption.
+  if (!hadSpeech) return;
   const total = chunks.reduce((n, c) => n + c.length, 0);
   if (total / rate < MIN_SEGMENT_S) return;
   const merged = new Float32Array(total);
