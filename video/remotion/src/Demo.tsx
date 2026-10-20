@@ -61,13 +61,13 @@ sfx.push({ at: at("problem") + 262, src: "sfx/whoosh_soft.wav", vol: 0.35 });
   sfx.push({ at: at("call") + Math.round(callFrameOf(e.t)), src: "sfx/click.wav", vol: 0.6 });
 });
 
-const audioStart = (callMeta.events as any[]).find((e) => e.kind === "audio-start").t;
+const audioStart = (callMeta as any).audioZero ?? (callMeta.events as any[]).find((e) => e.kind === "audio-start").t;
 const siteAudio = (siteMeta.events as any[]).find((e) => e.label === "sample-zh-severe").t;
 const voice = {
-  problem: { at: at("problem") + PROBLEM_AUDIO_AT, len: Math.round(7.33 * 30) },
+  problem: { at: at("problem") + PROBLEM_AUDIO_AT, len: Math.round(5.25 * 30) },
   site: { at: at("site") + Math.round((siteAudio - SITE_IN) * 30), len: Math.round(7.36 * 30) },
   // The fake microphone starts playing when capture opens, i.e. at Start.
-  call: { at: at("call") + Math.round(callFrameOf(audioStart)) + 2, len: Math.round(35.8 * 30) },
+  call: { at: at("call") + Math.round(callFrameOf(audioStart)), len: Math.round(33.5 * 30) },
 };
 // Speech windows the music ducks under.
 const ducks: [number, number][] = [

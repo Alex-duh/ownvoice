@@ -6,6 +6,7 @@ import { Iridescent, ToneStack, TONES, tonePath, Words, Pop, Logo, Chip, useIn, 
 import callMeta from "../public/footage/call.json";
 import siteMeta from "../public/footage/site.json";
 import callStock from "../public/footage/call_stock.json";
+import mdsc from "../public/footage/mdsc_summary.json";
 
 const ease = { extrapolateLeft: "clamp" as const, extrapolateRight: "clamp" as const, easing: Easing.inOut(Easing.cubic) };
 
@@ -95,7 +96,7 @@ const Waveform: React.FC<{ src: string; start: number; color: string }> = ({ src
 
 export const Problem: React.FC<{ audioAt: number }> = ({ audioAt }) => {
   const f = useCurrentFrame();
-  const typed = "折磅子，依依是太快，my idol。";
+  const typed = "接我到你那大点";
   const nType = Math.floor(interpolate(f, [205, 250], [0, typed.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
   const strike = interpolate(f, [258, 270], [0, 1], ease);
   return (
@@ -113,8 +114,8 @@ export const Problem: React.FC<{ audioAt: number }> = ({ audioAt }) => {
               </div>
               <Waveform src="audio/problem.wav" start={audioAt} color={C.cobalt} />
             </div>
-            <div style={{ font: `600 54px ${F.zh}`, marginTop: 12 }}>這房子也是貸款買來的</div>
-            <div style={{ font: `500 26px ${F.body}`, color: C.inkSoft }}>“This house was bought with a loan, too.”</div>
+            <div style={{ font: `600 54px ${F.zh}`, marginTop: 12 }}>給我聲音再大點</div>
+            <div style={{ font: `500 26px ${F.body}`, color: C.inkSoft }}>“Turn the sound up for me.”</div>
           </Pop>
           <Pop start={192} style={{ flex: 1, background: "#fff", borderRadius: 28, padding: "30px 36px", boxShadow: "0 24px 60px rgba(20,17,15,.10)", border: `3px solid ${C.red}33` }}>
             <div style={{ font: `700 18px ${F.body}`, letterSpacing: "0.14em", color: C.red }}>STANDARD SPEECH RECOGNITION HEARD</div>
@@ -122,11 +123,11 @@ export const Problem: React.FC<{ audioAt: number }> = ({ audioAt }) => {
               {typed.slice(0, nType)}<span style={{ opacity: f % 16 < 8 && nType < typed.length ? 1 : 0 }}>|</span>
               <div style={{ position: "absolute", left: 0, top: "52%", height: 5, background: C.red, width: `${strike * 100}%`, borderRadius: 3 }} />
             </div>
-            <div style={{ font: `500 26px ${F.body}`, color: C.inkSoft, opacity: strike }}>Not a sentence.</div>
+            <div style={{ font: `500 26px ${F.body}`, color: C.inkSoft, opacity: strike }}>“Pick me up at your place, big dot.”</div>
           </Pop>
         </div>
         <div style={{ font: `500 17px ${F.body}`, color: "#8a8277", marginTop: 20 }}>
-          Real volunteer voice (Common Voice, CC0) with simulated severe dysarthria. Stock Whisper-small output, unedited.
+          Real speaker with dysarthria (MDSC / AISHELL-6B, CC BY-NC 4.0). Stock Whisper-small output, unedited.
         </div>
       </AbsoluteFill>
     </AbsoluteFill>
@@ -148,7 +149,8 @@ export const LogoAnswer: React.FC = () => {
         <Pop start={62} style={{ position: "absolute", top: 640, background: "#fff", borderRadius: 28, padding: "26px 40px", boxShadow: "0 24px 60px rgba(20,17,15,.12)", border: `3px solid ${C.grass}55`, display: "flex", alignItems: "center", gap: 28 }}>
           <div>
             <div style={{ font: `700 18px ${F.body}`, letterSpacing: "0.14em", color: C.grass }}>OWNVOICE HEARD</div>
-            <div style={{ font: `600 58px ${F.zh}`, marginTop: 6 }}>這房子也是貸款買來的</div>
+            <div style={{ font: `600 58px ${F.zh}`, marginTop: 6 }}>給我聲音再大一點</div>
+            <div style={{ font: `500 22px ${F.body}`, color: C.inkSoft }}>Same meaning. One extra 一, no other changes.</div>
           </div>
           <Pop start={76}><div style={{ width: 76, height: 76, borderRadius: "50%", background: C.grass, display: "grid", placeItems: "center" }}>
             <svg width={40} height={40} viewBox="0 0 24 24"><path d="M4 12.5 L9.5 18 L20 6.5" fill="none" stroke="#fff" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" /></svg></div></Pop>
@@ -249,9 +251,9 @@ export const Install: React.FC = () => {
 /* ================================================================= 7. call */
 const ev = (label: string) => (callMeta.events as any[]).find((e) => e.label === label || e.kind === label).t as number;
 export const CALL = {
-  aIn: 0.0, aOut: 8.0, aRate: 2,           // setup, shown at 2x
-  bIn: 8.0, bOut: 47.6,                     // live captioning, real time
-  cIn: 52.6, cOut: 57.0,                    // switch to 中文
+  aIn: Math.max(0, ev("toolbar-icon") - 1.6), aOut: ev("start") - 0.6, aRate: 2, // setup, at 2x
+  bIn: ev("start") - 0.6, bOut: Math.max(...(callStock as any[]).map((r) => r.arrive)) + 3.0, // live, real time
+  cIn: ev("lang-zh") - 1.4, cOut: (callMeta as any).duration - 0.2,                  // switch to 中文
 };
 export const callFrames = {
   a: Math.round(((CALL.aOut - CALL.aIn) / CALL.aRate) * 30),
@@ -264,27 +266,32 @@ export const callFrameOf = (t: number) =>
   : t < CALL.bOut ? callFrames.a + (t - CALL.bIn) * 30
   : callFrames.a + callFrames.b + (t - CALL.cIn) * 30;
 
-const callKeys: Key[] = [
-  { t: 0.0, x: 960, y: 540, z: 1.0 }, { t: 0.9, x: 1560, y: 200, z: 1.55 }, { t: 2.6, x: 1640, y: 260, z: 1.55 },
-  { t: 7.0, x: 1680, y: 300, z: 1.6 }, { t: 9.6, x: 1680, y: 300, z: 1.6 }, { t: 11.6, x: 1250, y: 520, z: 1.22 },
-  { t: 47.6, x: 1250, y: 520, z: 1.22 }, { t: 52.6, x: 1700, y: 260, z: 1.5 }, { t: 57.0, x: 1720, y: 240, z: 1.6 },
-];
+const callKeys: Key[] = (() => {
+  const tb = ev("toolbar-icon"), st = ev("start"), zh = ev("lang-zh");
+  return [
+    { t: CALL.aIn, x: 960, y: 540, z: 1.0 }, { t: tb - 0.4, x: 1560, y: 200, z: 1.55 }, { t: tb + 0.8, x: 1640, y: 260, z: 1.55 },
+    { t: st - 1.5, x: 1680, y: 300, z: 1.6 }, { t: st + 1.2, x: 1680, y: 300, z: 1.6 }, { t: st + 3.2, x: 1250, y: 520, z: 1.22 },
+    { t: CALL.bOut, x: 1250, y: 520, z: 1.22 }, { t: zh - 0.9, x: 1700, y: 260, z: 1.5 }, { t: CALL.cOut, x: 1720, y: 240, z: 1.6 },
+  ];
+})();
 const GLOSS = [
-  "“You finally bought a house!”",
-  "“When I graduated from high school…”",
-  "“…we raised a few cows.”",
-  "“Only then did I realise the water hadn’t all been poured out.”",
-  "“I had a bad feeling about it.”",
+  "“Turn on the air conditioning.”",
+  "“I need the temperature set to 25.”",
+  "“Open the curtains.”",
+  "“The volume’s too low for me.”",
+  "“Turn the volume up a little for me.”",
 ];
 
 const CallLayer: React.FC<{ tIn: number; rate?: number; badge: React.ReactNode }> = ({ tIn, rate = 1, badge }) => {
   const f = useCurrentFrame();
   const t = tIn + (f / 30) * rate;
-  const audio0 = ev("audio-start");
+  // Measured from the panel's own level meter (record_call2.mjs), not assumed.
+  const audio0 = (callMeta as any).audioZero ?? ev("audio-start");
   const marks = callMeta.marks as number[][];
   const cur = marks.findIndex((m) => t >= audio0 + m[0] - 0.1 && t <= audio0 + m[1] + 1.2);
-  // "Standard" comparison for the sentence whose OwnVoice caption just arrived.
-  const cmp = marks.findIndex((m) => t >= audio0 + m[1] + 3.3 && t <= audio0 + m[1] + 7.6);
+  // Comparison for the sentence whose OwnVoice caption has just landed in the panel.
+  let cmp = -1;
+  (callStock as any[]).forEach((r, i) => { if (t >= r.arrive + 0.15 && t <= r.arrive + 4.8) cmp = i; });
   return (
     <AbsoluteFill style={{ background: "#202124" }}>
       <div style={{ width: 1920, height: 1080, transformOrigin: "0 0", transform: camera(callKeys, t) }}>
@@ -300,18 +307,22 @@ const CallLayer: React.FC<{ tIn: number; rate?: number; badge: React.ReactNode }
       )}
       {cmp >= 0 && (() => {
         const r = (callStock as any[])[cmp];
-        const same = r.stock_cer === 0;
+        const norm = (x: string) => x.replace(/[\s,，。.!?、]/g, "");
+        const stockOk = norm(r.stock) === norm(r.ref_tw) || r.stock_cer === 0;
+        const oursOk = norm(r.live) === norm(r.ref_tw);
         return (
-          <div style={{ position: "absolute", left: 40, top: 110, background: "rgba(255,255,255,.96)", borderRadius: 18, padding: "16px 22px", boxShadow: "0 16px 40px rgba(0,0,0,.3)", maxWidth: 760 }}>
-            <div style={{ font: `700 16px ${F.body}`, letterSpacing: "0.12em", color: same ? C.inkSoft : C.red }}>STANDARD RECOGNITION, SAME AUDIO</div>
-            <div style={{ font: `600 36px ${F.zh}`, color: same ? C.ink : C.red, marginTop: 4 }}>{r.stock}</div>
-            <div style={{ font: `600 16px ${F.body}`, letterSpacing: "0.12em", color: C.grass, marginTop: 10 }}>OWNVOICE</div>
-            <div style={{ font: `600 36px ${F.zh}`, color: C.ink }}>{r.ours} <span style={{ color: C.grass }}>✓</span></div>
+          <div style={{ position: "absolute", left: 40, top: 110, background: "rgba(255,255,255,.96)", borderRadius: 18, padding: "16px 22px", boxShadow: "0 16px 40px rgba(0,0,0,.3)", maxWidth: 820 }}>
+            <div style={{ font: `700 16px ${F.body}`, letterSpacing: "0.12em", color: C.inkSoft }}>HE SAID</div>
+            <div style={{ font: `600 30px ${F.zh}`, color: C.ink, marginTop: 2 }}>{r.ref_tw}</div>
+            <div style={{ font: `700 16px ${F.body}`, letterSpacing: "0.12em", color: stockOk ? C.inkSoft : C.red, marginTop: 10 }}>STANDARD RECOGNITION, SAME AUDIO</div>
+            <div style={{ font: `600 30px ${F.zh}`, color: stockOk ? C.ink : C.red, marginTop: 2 }}>{r.stock}{stockOk ? " ✓" : ""}</div>
+            <div style={{ font: `700 16px ${F.body}`, letterSpacing: "0.12em", color: C.cobalt, marginTop: 10 }}>OWNVOICE, LIVE</div>
+            <div style={{ font: `600 30px ${F.zh}`, color: C.ink, marginTop: 2 }}>{r.live}{oursOk ? <span style={{ color: C.grass }}> ✓</span> : ""}</div>
           </div>
         );
       })()}
       <div style={{ position: "absolute", left: 40, bottom: 18, font: `500 16px ${F.body}`, color: "rgba(255,255,255,.75)" }}>
-        Real OwnVoice extension and model, recorded live on a laptop CPU. Voice: Common Voice volunteer (CC0), never heard in training, with simulated severe dysarthria, fed in as the microphone.
+        Real OwnVoice extension and model, recorded live on a laptop CPU. Voice: a real speaker with dysarthria (MDSC / AISHELL-6B, CC BY-NC 4.0), sentences selected from his recordings, fed in as the microphone.
       </div>
     </AbsoluteFill>
   );
@@ -344,7 +355,7 @@ export const Results: React.FC = () => {
     <AbsoluteFill>
       <Iridescent />
       <AbsoluteFill style={{ padding: "100px 140px" }}>
-        <Words text="RESULTS" start={0} style={{ font: `700 24px ${F.body}`, letterSpacing: "0.2em", color: C.tangerine }} />
+        <Words text="RESULTS ON SIMULATED DYSARTHRIA, 91 SPEAKERS" start={0} style={{ font: `700 24px ${F.body}`, letterSpacing: "0.2em", color: C.tangerine }} />
         <Words text="It helps most where speech is worst." start={4} stagger={3} style={{ font: `900 70px ${F.display}`, letterSpacing: "-0.02em", marginTop: 8 }} />
         <div style={{ display: "flex", marginTop: 40, gap: 120 }}>
           <div>
@@ -378,8 +389,22 @@ export const Results: React.FC = () => {
             <Pop start={110}><div style={{ font: `900 110px/1 ${F.display}`, color: C.tangerine }}>~3 s</div><div style={{ font: `500 30px ${F.body}`, color: C.inkSoft }}>from end of sentence to caption,<br />on an ordinary laptop CPU</div></Pop>
           </div>
         </div>
-        <div style={{ position: "absolute", left: 140, bottom: 40, font: `500 17px ${F.body}`, color: "#8a8277" }}>
-          Fine-tuned Whisper-small. Simulated dysarthria; test speakers never used in training. Testing with real patients is next.
+        {(mdsc as any).ready ? (() => {
+          const all = (mdsc as any)["dysarthric (all)"];
+          const pct = (x: number) => `${Math.round(x * 100)}%`;
+          return (
+            <Pop start={130} style={{ position: "absolute", left: 140, right: 140, bottom: 70, background: "#fff", borderRadius: 22, padding: "18px 28px", boxShadow: "0 18px 50px rgba(20,17,15,.10)", display: "flex", alignItems: "center", gap: 28 }}>
+              <div style={{ font: `800 22px ${F.body}`, letterSpacing: "0.12em", color: C.grass, whiteSpace: "nowrap" }}>FIRST TEST ON REAL PATIENTS</div>
+              <div style={{ font: `600 28px ${F.body}` }}>
+                {all.speakers} speakers with dysarthria, {all.n} recordings: character errors {pct(all.stock_cer)} → <span style={{ color: C.cobalt }}>{pct(all.ours_cer)}</span> with OwnVoice
+              </div>
+            </Pop>
+          );
+        })() : null}
+        <div style={{ position: "absolute", left: 140, bottom: 34, font: `500 17px ${F.body}`, color: "#8a8277" }}>
+          {(mdsc as any).ready
+            ? "Bars: fine-tuned Whisper-small on simulated dysarthria, unseen speakers. Real patients: MDSC / AISHELL-6B (CC BY-NC 4.0), 20 random sentences per speaker, no selection."
+            : "Fine-tuned Whisper-small. Simulated dysarthria; test speakers never used in training. Testing with real patients is next."}
         </div>
       </AbsoluteFill>
     </AbsoluteFill>

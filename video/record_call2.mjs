@@ -64,6 +64,25 @@ await clickAt(p.x, p.y, "toolbar-icon");
 const frame = page.frameLocator("#ext");
 await frame.locator("#rec").waitFor();
 events.push({ t: now(), kind: "panel-open" });
+// Observe (never modify) the real panel: when its level meter first moves, and
+// when each caption lands. The edit syncs audio and overlays to these times.
+const extFrame = page.frames().find((f) => f.url().startsWith("chrome-extension://"));
+await extFrame.evaluate(() => {
+  window.__ov = { level: [], caps: [] };
+  const lv = document.getElementById("level");
+  new MutationObserver(() => {
+    const w = parseFloat(lv.style.width) || 0;
+    if (w > 2) window.__ov.level.push(Date.now() / 1000);
+  }).observe(lv, { attributes: true, attributeFilter: ["style"] });
+  new MutationObserver(() => {
+    document.querySelectorAll("#out li.seg").forEach((li) => {
+      if (!li.classList.contains("is-pending") && !li.dataset.ovSeen) {
+        li.dataset.ovSeen = "1";
+        window.__ov.caps.push({ t: Date.now() / 1000, text: li.querySelector(".seg__text").textContent });
+      }
+    });
+  }).observe(document.getElementById("out"), { subtree: true, childList: true, attributes: true, characterData: true });
+});
 await wait(1800);
 
 // 2. Microphone source (already the default; clicked so the viewer sees it chosen).
@@ -93,10 +112,18 @@ const tEnd = now();
 
 const captions = await frame.locator("#out li .seg__text").allTextContents();
 const metas = await frame.locator("#out li .seg__meta").allTextContents();
+const observed = await extFrame.evaluate(() => window.__ov);
 await cast.stop();
 await ctx.close();
 
 const t0 = encode(cast.frames, path.join(OUT, "call.mp4"), tEnd);
 const rel = events.map((e) => ({ ...e, t: +(e.t - t0).toFixed(3) }));
-fs.writeFileSync(path.join(OUT, "call.json"), JSON.stringify({ extId, duration: +(tEnd - t0).toFixed(3), events: rel, captions, metas, marks: data.marks }, null, 1));
+// The call audio opens with data.marks[0][0] seconds of silence, so the meter's
+// first movement after Start marks that point in the file.
+const tStart = events.find((e) => e.kind === "audio-start").t;
+const firstLevel = observed.level.find((x) => x > tStart);
+const audioZero = firstLevel ? +(firstLevel - data.marks[0][0] - t0).toFixed(3) : null;
+const capArrivals = observed.caps.map((c) => ({ t: +(c.t - t0).toFixed(3), text: c.text }));
+fs.writeFileSync(path.join(OUT, "call.json"), JSON.stringify({ extId, duration: +(tEnd - t0).toFixed(3), events: rel, captions, metas, marks: data.marks, audioZero, capArrivals }, null, 1));
+console.error("audioZero (footage s):", audioZero, " start event:", +(tStart - t0).toFixed(3), " captions at:", capArrivals.map((c) => c.t));
 console.log(JSON.stringify({ captions, metas, events: rel, frames: cast.frames.length }, null, 1));
