@@ -30,7 +30,12 @@ const MIN_SEGMENT_S = 0.6;
 // short: severe-simulated sentences run 3.5-6 s, so every one was cut in two,
 // the halves were misrecognised (計程車 -> 技術), and the extra requests built a
 // backlog that dropped the first sentence entirely. Measured 2026-10-19.
-const MAX_SEGMENT_S = 6;
+// 7 s, not 6: real voices put through the severe simulator run up to 6.3 s
+// per sentence (measured 2026-10-20 on Common Voice test speakers).
+const MAX_SEGMENT_S = 7;
+// About 340 ms at 48 kHz (4 x 4096 samples) of audio kept from just before
+// speech starts, so the first syllable's onset is not clipped.
+const PREROLL_FRAMES = 4;
 // Inference is serialised, so if it runs slower than speech the backlog
 // grows without bound and captions drift further behind every phrase.
 // Past this many waiting segments we drop the oldest instead, which loses
@@ -254,9 +259,13 @@ async function start() {
     $("level").style.width = Math.min(100, rms * 1200) + "%";
 
     buf.push(copy);
-    const held = buf.reduce((n, c) => n + c.length, 0) / ctx.sampleRate;
     if (rms > SILENCE_RMS) { voiced = true; silentMs = 0; }
     else if (voiced) silentMs += frameMs;
+    // Before anyone speaks, keep only a short pre-roll. Otherwise the silence
+    // ahead of a phrase counts toward MAX_SEGMENT_S and the cap cuts the
+    // phrase itself mid-word (我才知道水沒倒完 -> 水沒到 / 道完).
+    else while (buf.length > PREROLL_FRAMES) buf.shift();
+    const held = buf.reduce((n, c) => n + c.length, 0) / ctx.sampleRate;
 
     if ((voiced && silentMs >= SILENCE_MS && held >= MIN_SEGMENT_S) || held >= MAX_SEGMENT_S) {
       flush(ctx.sampleRate);

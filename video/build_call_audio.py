@@ -11,10 +11,11 @@ import librosa
 import numpy as np
 import soundfile as sf
 
-d = sys.argv[1]  # the directory make_call_clips.py wrote to
+d = sys.argv[1]  # directory holding severe1.wav, severe2.wav, ...
+n = int(sys.argv[2]) if len(sys.argv) > 2 else 6
 sr, lead, gap = 16000, 1.0, 1.6
 parts, marks, t = [np.zeros(int(lead * sr), np.float32)], [], lead
-for i in range(1, 7):
+for i in range(1, n + 1):
     y, _ = sf.read(f"{d}/severe{i}.wav", dtype="float32")
     y = y / np.abs(y).max() * 0.8
     marks.append([round(t, 2), round(t + len(y) / sr, 2)])

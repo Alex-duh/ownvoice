@@ -101,35 +101,64 @@ python backend/app.py            # default OWNVOICE_MODEL is runs/asr_v1; serves
 # then open https://ownvoice-three.vercel.app/?api=http://127.0.0.1:7860
 ```
 
-`[ASSUMPTION until run]` A page served over https can call `http://127.0.0.1` because Chrome
-treats localhost as a secure origin. The backend's CORS allow-list only contains localhost:5173
-and :4173, so calls from ownvoice-three.vercel.app will probably be blocked unless that origin is
-added. The team may already handle this in the unpublished site/extension code. Verify before
-recording.
+**Restart the model server right before any live demo.** On 2026-10-20 a server that had been up
+for hours with both models loaded took 2.7–7 s per sentence; the same clips took 2.4–3.2 s after
+a restart.
+
+**The website's live-caption section can't reach a local server.** Chrome's Local Network Access
+blocks `https://ownvoice.vercel.app` from fetching `http://127.0.0.1:7860` unless the user grants
+a permission prompt (verified 2026-10-20). The extension isn't affected (it runs on
+`chrome-extension://` with host permissions). Live captions are therefore demoed only in the
+extension.
+
+**This repo lives in iCloud Drive** (`~/Documents` syncs). Heavy folders are renamed `*.nosync`
+with a symlink at the old name (`runs`, `video/node_modules`, `video/remotion/node_modules`), so
+iCloud skips them. Do the same for any new `node_modules` or model folder.
+iCloud fought the `runs` rename on 2026-10-20: it re-created `runs/` as a cloud placeholder and
+renamed the symlink to `runs 2`. The real model is in **`runs.nosync/asr_v1`**. Start the server
+with `OWNVOICE_MODEL=runs.nosync/asr_v1 python backend/app.py`. The `runs/` folder in iCloud is a
+leftover upload that Alex can delete.
 
 Older React site: `cd site && npm install && npm run dev` (port 5173, API at localhost:7860).
 
-## Extension fixes made 2026-10-19 (found by running the real panel on severe clips)
+## Extension fixes made 2026-10-19/20 (found by running the real panel on severe clips)
 
-- `MAX_SEGMENT_S` went from 2.5 to 6 and `SILENCE_MS` from 320 to 500. At 2.5 s every severe
-  sentence (3.5–6 s) was cut in two and misrecognised.
-- Segments with no speech are now discarded. Before, silence produced "HTTP 400" captions.
+- `MAX_SEGMENT_S` 2.5 → 7 and `SILENCE_MS` 320 → 500. At 2.5 s every severe sentence (3.5–6.3 s)
+  was cut in two and misrecognised.
+- Pre-roll: before speech starts, only the last ~340 ms of audio is kept. Before, silence ahead
+  of a phrase counted toward the cap, so the cap cut real sentences mid-word.
+- Segments with no speech are discarded. Before, silence produced "HTTP 400" captions.
 - Backlog shedding no longer sends shed segments to the server and never drops the one in
   flight. Before, the first sentence of a call was lost.
-- Measured on a Mac CPU: about 1.4–2.4 s from the end of a phrase to its caption.
+- Measured on an M4 Mac CPU (fresh server): about 2.4–3.2 s of inference per 4–6 s sentence, so
+  a caption lands about 3 s after the sentence ends.
 
-## Open items (2026-10-19, late)
+## Real-patient data (MDSC / AISHELL-6B), received 2026-10-20
 
-- Local `master` holds the upstream merge, the download button, the extension fixes and
-  `video/`. It is **not pushed**: the push was blocked by the permission prompt. Run
-  `git push origin master`, then open a PR to andrewshih0407/ownvoice so Andrew's copy gets
-  the fixes.
+- On disk (not in git, not in iCloud): `~/Downloads/dysarthric mandarin data/` with
+  `extracted/Uncontrol` (21 dysarthric speakers), `extracted/Control` (25 healthy speakers) and
+  `Intelligibility.xlsx` (expert intelligibility per speaker, 22–94%). License CC BY-NC 4.0:
+  credit "MDSC / AISHELL-6B"; non-commercial only; never redistribute raw audio.
+- Layout differs from what `src/data_mdsc.py` assumed: `train/` has `wav/<spk>/` plus a single
+  `transcript/label.txt`; `dev/` and `test/` have `enrollment/` and `eval/`. Labels are
+  Simplified Chinese, `<p>` marks a pause, and recordings 0001–0050 of each speaker are wake words.
+- `src/eval_mdsc.py` is the first real-patient test (pre-registered in its docstring).
+  Results go to `runs/mdsc_eval.jsonl` and get written up in `docs/results.md`.
+
+## Open items (2026-10-20)
+
+- Pushing: Alex runs `git push origin master` himself (his preference). Then open a PR to
+  andrewshih0407/ownvoice so Andrew's copy gets the fixes.
 - A downloaded extension still needs the model server on localhost, so a judge who installs it
   sees "Cannot reach the model server." The fixes are a hosted backend or the Chrome Web Store.
   Not decided.
 - The "View the source" link points at `tree/master/extension`, which 404s until upstream
   master has the extension.
 - Tab capture (`This tab's audio`) has not been exercised. Only the mic path was recorded.
+- Video v2 is built with Remotion in `video/remotion` (see `video/README.md`). Render with
+  `--browser-executable` pointing at Playwright's chrome-headless-shell, because Remotion's own
+  browser crashes on launch on this Mac.
 - The local Python env (anaconda base) gained fastapi, uvicorn, soundfile, pyworld, librosa,
-  zhconv, pypinyin and imageio-ffmpeg. `huggingface-hub` was pinned back to 1.x for
-  transformers 5.10.
+  zhconv, pypinyin, openpyxl and imageio-ffmpeg. `huggingface-hub` was pinned back to 1.x for
+  transformers 5.10. `datasets` is NOT installed: its pandas build breaks under numpy 2. Read
+  parquet with pyarrow directly.

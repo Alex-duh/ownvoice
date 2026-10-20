@@ -62,3 +62,9 @@ docs/SUBMISSION-PRIVATE.md
 .claude/
 $null
 .fuse_hidden*
+
+# Heavy local folders kept out of iCloud Drive with a .nosync suffix;
+# the plain names are symlinks to them.
+*.nosync
+runs
+/runs*
