@@ -20,16 +20,18 @@ Alexander Du.
 | Thing | Location | Notes |
 |---|---|---|
 | Canonical repo | https://github.com/andrewshih0407/ownvoice (`upstream`) | Alex's fork is `origin` (Alex-duh/ownvoice) |
-| **Current product site** | https://ownvoice-three.vercel.app (`#extension` section), deployed by Andrew | Static HTML/JS in `product-site/`, on upstream branch `product-site-and-extension` (not on master yet) |
-| Older research site | https://ownvoice.vercel.app | Built from `site/` (Vite + React). It's Alex's Vercel project `ownvoice` (link in `site/.vercel/`). Plan: repoint it at `product-site/`, see "Deploy plan" |
+| **Product site (canonical URL)** | **https://ownvoice.vercel.app** | Static `product-site/`. It's Alex's Vercel project `ownvoice` (team alex-dudu-projects1). Since 2026-10-19 it's deployed from the CLI: `cd product-site && npx vercel deploy --prod`. `product-site/vercel.json` overrides the project's Vite preset to plain static. It is not git-connected, so pushes do not deploy |
+| Andrew's copy of the product site | https://ownvoice-three.vercel.app | Same `product-site/` code, deployed by Andrew. It lacks the download button until he redeploys |
+| Older research site | `site/` (Vite + React) | Lost the ownvoice.vercel.app URL on 2026-10-19. Not currently deployed anywhere by Alex; `vercel rollback` restores it |
 | Older HF static site | https://anonymous6623-ownvoice.static.hf.space | Still linked from README.md |
 | Streamlit demo (model runs here) | https://appapppy-m7fpkveuhxbkxapu2bbkdg.streamlit.app | Kept awake by `.github/workflows/keep-awake.yml` |
 | Fine-tuned model | https://huggingface.co/anonymous6623/ownvoice-asr | Used by `streamlit_app.py` |
 | Pitch deck (long version, 12 slides) | `~/Downloads/OwnVoice-Final-Deck.pptx` (not in repo) | Script is about 7.5 minutes |
-| Chrome extension | `extension/` on upstream branch `product-site-and-extension` | MV3 side panel with mic or tab capture (`tabCapture`) and an EN/中文 UI. It defaults to `http://localhost:7860`. Its README says it is **untested against a real microphone and real tab capture** |
+| Chrome extension | `extension/` (merged from upstream branch `product-site-and-extension`) | MV3 side panel with mic or tab capture (`tabCapture`) and an EN/中文 UI. It defaults to `http://localhost:7860`. **The mic path was verified end to end on 2026-10-19** (see `video/`). Tab capture is still untested |
 | Extension download | `product-site/downloads/ownvoice-extension.zip`, built by `scripts/pack-extension.sh` | Built from the *committed* `extension/` via `git archive`. Re-run and commit after every extension change |
 | 5-minute presentation script | `docs/presentation-script.md` (same branch) | Matches the 6-slide deck OwnVoice-Presentation-Final.pptx |
 | Demo video plan | `docs/demo-video-plan.md` | v2: the 2-minute product-demo video, the tooling (Remotion skills), and the overlay verdict |
+| **Rendered demo video** | `~/Downloads/OwnVoice-demo.mp4` (not in git, 14 MB) | 1:57, 1080p. Built by `video/` (Playwright plus ffmpeg, fully scripted). `video/README.md` lists what's real and what's staged |
 | Hackathon rules | `docs/handbook-2026.pdf` | Finals weights: Feasibility 30, Innovation 20, Social impact 20, Implementation and verification 30. The final review is "late October" 2026 |
 
 ## Architecture
@@ -107,27 +109,27 @@ recording.
 
 Older React site: `cd site && npm install && npm run dev` (port 5173, API at localhost:7860).
 
-## Deploy plan for ownvoice.vercel.app (proposed 2026-10-19, not done)
+## Extension fixes made 2026-10-19 (found by running the real panel on severe clips)
 
-1. Merge `product-site-and-extension` into master, upstream first, then sync Alex's fork.
-2. In Alex's Vercel project `ownvoice`, go to Settings and set **Root Directory = `product-site`**,
-   Framework = Other, with no build command. Connect it to the repo that Vercel can see.
-3. Give the React research site (`site/`) its own project/URL and link it from the product site,
-   or retire it.
-4. `backend/app.py` CORS now allows `ownvoice(-three)?.vercel.app` (local branch
-   `site-download-button`).
+- `MAX_SEGMENT_S` went from 2.5 to 6 and `SILENCE_MS` from 320 to 500. At 2.5 s every severe
+  sentence (3.5–6 s) was cut in two and misrecognised.
+- Segments with no speech are now discarded. Before, silence produced "HTTP 400" captions.
+- Backlog shedding no longer sends shed segments to the server and never drops the one in
+  flight. Before, the first sentence of a call was lost.
+- Measured on a Mac CPU: about 1.4–2.4 s from the end of a phrase to its caption.
 
-## Open items (2026-10-19)
+## Open items (2026-10-19, late)
 
-- Local branch `site-download-button` (from `upstream/product-site-and-extension`) has the
-  download button, updated EN/中文 install steps, the pack script and the CORS change. It is
-  **uncommitted and not pushed**.
-- A downloaded extension still needs the model server on localhost, so for a nontechnical user
-  (or a judge) it shows "Cannot reach the model server." The fixes are a hosted backend for the
-  judging window, plus the Chrome Web Store (one-time $5 fee) to remove Developer mode. Not
-  decided.
-- The "View the source" link points at `tree/master/extension`, which 404s until the branch is
-  merged to master.
-- Test extension tab capture for real (this is the make-or-break step for the demo video).
-- Measure real-time factor on whichever machine records the demo.
-- Local `master` has the upstream merge (98abea4), not pushed to `origin`.
+- Local `master` holds the upstream merge, the download button, the extension fixes and
+  `video/`. It is **not pushed**: the push was blocked by the permission prompt. Run
+  `git push origin master`, then open a PR to andrewshih0407/ownvoice so Andrew's copy gets
+  the fixes.
+- A downloaded extension still needs the model server on localhost, so a judge who installs it
+  sees "Cannot reach the model server." The fixes are a hosted backend or the Chrome Web Store.
+  Not decided.
+- The "View the source" link points at `tree/master/extension`, which 404s until upstream
+  master has the extension.
+- Tab capture (`This tab's audio`) has not been exercised. Only the mic path was recorded.
+- The local Python env (anaconda base) gained fastapi, uvicorn, soundfile, pyworld, librosa,
+  zhconv, pypinyin and imageio-ffmpeg. `huggingface-hub` was pinned back to 1.x for
+  transformers 5.10.

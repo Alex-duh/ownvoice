@@ -1,6 +1,13 @@
 # Demo video plan (2 minutes): product demo, v2
 
-Revised 2026-10-19 (v1 written the same day). v1 was framed for clinical partners. The video
+Revised 2026-10-19 (v1 written the same day).
+
+> **Status, 2026-10-19 late:** a first cut exists at `~/Downloads/OwnVoice-demo.mp4`, built
+> fully automatically by `video/` with no screen recorder or Meet. It follows this shot list,
+> with three differences: a mock call window instead of Google Meet, text on screen instead of a
+> voiceover, and synthetic voice plus simulated dysarthria for the speaker. All three are
+> labeled in the video. Upgrades for the finals: an Andrew voiceover, and a real Meet/tab-capture
+> take, which is still untested. v1 was framed for clinical partners. The video
 is for the **Presidential Hackathon final review**, so its job is to show that OwnVoice is a
 working product that wins on the judging criteria.
 
