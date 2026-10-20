@@ -86,6 +86,23 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://localhost:4173",
     ],
+    # The Chrome extension's side panel is served from chrome-extension://<id>,
+    # and the id is not knowable until the extension is loaded, so it has to be
+    # matched by pattern. MV3 pages with host_permissions usually bypass CORS
+    # for the hosts they declare, but that is a browser-version-dependent
+    # detail and a blocked preflight here looks identical to a dead server.
+    # Allowing the scheme costs nothing: the API serves no credentials and no
+    # private data, and it binds to localhost.
+    # The public site is on Vercel and the API is reached through an ngrok
+    # tunnel, so both of those origins have to be allowed alongside the
+    # extension. Note that CORS is a browser rule, not an access control: once
+    # the tunnel is open, anything that knows the URL can POST to it directly.
+    allow_origin_regex=(
+        r"^(chrome-extension://[a-p]+"
+        r"|https://ownvoice-three\.vercel\.app"
+        r"|https://[a-z0-9-]+\.ngrok(-free)?\.(app|io|dev)"
+        r"|http://(localhost|127\.0\.0\.1):\d+)$"
+    ),
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],

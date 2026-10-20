@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>OwnVoice settings</title>
+  <style>
+    body{font:14px/1.5 system-ui,-apple-system,"Noto Sans TC",sans-serif;
+      max-width:540px;margin:40px auto;padding:0 20px;color:#14110f}
+    h1{font-size:20px;margin:0 0 4px}
+    p{color:#4a443d}
+    label{display:block;font-weight:600;margin:18px 0 6px}
+    input{width:100%;padding:9px 11px;border:1px solid #c9c4ba;border-radius:8px;
+      font:inherit}
+    button{margin-top:16px;padding:9px 18px;border:0;border-radius:99px;
+      background:#14110f;color:#f4efe6;font:inherit;font-weight:700;cursor:pointer}
+    .ok{color:#15803d;margin-left:10px}
+    .note{background:#f4f1ea;border-radius:10px;padding:12px 14px;margin-top:22px;
+      font-size:13px}
+  </style>
+</head>
+<body>
+  <h1>OwnVoice settings</h1>
+  <p>Where the speech model is running.</p>
+
+  <label for="api">Model server address</label>
+  <input id="api" type="url" placeholder="http://localhost:7860" />
+
+  <button id="save">Save</button><span id="ok" class="ok"></span>
+
+  <div class="note">
+    <strong>Running locally?</strong> Start the backend with
+    <code>python -m uvicorn backend.app:app --port 7860</code> and leave the
+    address as <code>http://localhost:7860</code>.
+    <br /><br />
+    A non-local <code>https://</code> address needs permission the first time;
+    Chrome will ask. Plain <code>http://</code> to anywhere other than localhost
+    will be blocked by the browser.
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

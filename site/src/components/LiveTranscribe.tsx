@@ -8,6 +8,7 @@ import {
   speak,
   speechSupported,
 } from "../lib/speech";
+import { T, LANG_LABEL, type Lang } from "../lib/i18n";
 
 /**
  * Live microphone transcription.
@@ -99,6 +100,14 @@ export function LiveTranscribe() {
   const [speakingId, setSpeakingId] = useState<number | null>(null);
   // Stage mode: full-screen transcript for a projector or a room display.
   const [stage, setStage] = useState(false);
+  // Interface language. The device is for Mandarin speakers; the surrounding
+  // page is English for the research audience, so this defaults to match the
+  // page and switches on demand.
+  const [lang, setLang] = useState<Lang>("en");
+  const langRef = useRef<Lang>(lang);
+  useEffect(() => {
+    langRef.current = lang;
+  }, [lang]);
 
   const ctxRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -282,7 +291,7 @@ export function LiveTranscribe() {
     } catch (e: any) {
       setErr(
         e?.name === "NotAllowedError"
-          ? "Microphone permission denied. Allow it in your browser and try again."
+          ? T[langRef.current].micDenied
           : String(e?.message || e)
       );
     }
@@ -310,6 +319,8 @@ export function LiveTranscribe() {
     [voice]
   );
 
+  const t = T[lang];
+
   const done = segments.filter((s) => s.state === "done");
   const transcript = done.map((s) => s.text).join("");
   const avgRtf =
@@ -317,18 +328,31 @@ export function LiveTranscribe() {
       ? done.reduce((n, s) => n + (s.rtf as number), 0) / done.length
       : null;
 
-  const MODES = [
-    ["tuned", "Adapted model", "our whisper-small · slower"],
-    ["fast", "Fast mode", "stock whisper-base · responsive"],
-  ] as const;
+  const MODES: [LiveMode, string, string][] = [
+    ["tuned", t.modeTuned, t.modeTunedNote],
+    ["fast", t.modeFast, t.modeFastNote],
+  ];
 
   return (
     <div className="tile tile--cobalt live-card">
-      <h3>Live transcription</h3>
-      <p className="live-sub">
-        Speak Mandarin. Audio is cut at pauses and transcribed segment by
-        segment. Nothing is stored &mdash; each clip is decoded in memory and
-        discarded.
+      <div className="live-head">
+        <h3>{t.title}</h3>
+        <div className="live-langs" role="group" aria-label="Interface language">
+          {(["en", "zh"] as Lang[]).map((l) => (
+            <button
+              key={l}
+              type="button"
+              className={`live-lang ${lang === l ? "is-on" : ""}`}
+              onClick={() => setLang(l)}
+              aria-pressed={lang === l}
+            >
+              {LANG_LABEL[l]}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="live-sub" lang={lang === "zh" ? "zh-TW" : "en"}>
+        {t.sub}
       </p>
 
       <div className="live-modes">
@@ -337,7 +361,7 @@ export function LiveTranscribe() {
             key={m}
             type="button"
             className={`live-mode ${mode === m ? "is-on" : ""}`}
-            onClick={() => setMode(m as LiveMode)}
+            onClick={() => setMode(m)}
             disabled={recording}
           >
             <span className="live-mode__label">{label}</span>
@@ -346,10 +370,7 @@ export function LiveTranscribe() {
         ))}
       </div>
       {mode === "fast" && (
-        <p className="live-warn">
-          Fast mode runs stock Whisper, not our fine-tuned model. It is here to
-          show the latency and accuracy trade, not our results.
-        </p>
+        <p className="live-warn">{t.fastWarn}</p>
       )}
 
       <div className="live-controls">
@@ -358,7 +379,7 @@ export function LiveTranscribe() {
           onClick={recording ? stop : start}
           type="button"
         >
-          {recording ? "■ Stop" : "● Start listening"}
+          {recording ? t.stop : t.start}
         </button>
         <div className="live-meter" aria-hidden="true">
           <div
@@ -366,7 +387,9 @@ export function LiveTranscribe() {
             style={{ width: `${level * 100}%` }}
           />
         </div>
-        {pending > 0 && <span className="live-pending">{pending} in flight</span>}
+        {pending > 0 && (
+          <span className="live-pending">{t.inFlight(pending)}</span>
+        )}
       </div>
 
       <div className="live-extras">
@@ -378,7 +401,7 @@ export function LiveTranscribe() {
             onChange={(e) => setAutoSpeak(e.target.checked)}
           />
           <span>
-            Read transcript aloud
+            {t.readAloud}
             {voice ? ` (${voice.lang})` : ""}
           </span>
         </label>
@@ -387,15 +410,11 @@ export function LiveTranscribe() {
           className="live-stage-btn"
           onClick={() => setStage(true)}
         >
-          Stage mode
+          {t.stageMode}
         </button>
       </div>
       {noVoice && (
-        <p className="live-warn">
-          No Mandarin system voice found in this browser, so readback is
-          unavailable here. It is an accessibility output only: it speaks the
-          recognised text in a generic voice, not the speaker&rsquo;s own.
-        </p>
+        <p className="live-warn">{t.noVoice}</p>
       )}
 
       {err && <p className="live-err">{err}</p>}
@@ -403,9 +422,7 @@ export function LiveTranscribe() {
       <div className="live-out">
         {segments.length === 0 ? (
           <span className="live-out__empty">
-            {recording
-              ? "Listening… pause to end a segment."
-              : "Transcript appears here."}
+            {recording ? t.listeningHint : t.empty}
           </span>
         ) : (
           <>
@@ -415,22 +432,22 @@ export function LiveTranscribe() {
                 <li key={s.id} className={`live-seg live-seg--${s.state}`}>
                   <span className="live-seg__text">
                     {s.state === "pending"
-                      ? "transcribing…"
-                      : s.text || "(silence)"}
+                      ? t.transcribing
+                      : s.text || t.silence}
                   </span>
                   {s.state === "done" && s.text && !noVoice && (
                     <button
                       type="button"
                       className="live-seg__speak"
                       onClick={() => speakOne(s.id, s.text)}
-                      title="Read this segment aloud"
+                      title={t.speakTitle}
                     >
                       {speakingId === s.id ? "▶" : "♪"}
                     </button>
                   )}
                   {s.state === "done" && (
                     <span className="live-seg__meta">
-                      {s.durationS.toFixed(1)}s audio {"·"}{" "}
+                      {s.durationS.toFixed(1)}{t.secAudio} {"·"}{" "}
                       {(s.elapsedMs / 1000).toFixed(1)}s
                       {s.rtf != null && ` · ${s.rtf.toFixed(2)}x`}
                     </span>
@@ -444,22 +461,25 @@ export function LiveTranscribe() {
 
       {avgRtf != null && (
         <p className="live-rtf">
-          Average {avgRtf.toFixed(2)}x real time.{" "}
-          {avgRtf > 1
-            ? "Above 1 means inference is slower than speech, so the transcript trails the speaker."
-            : "Below 1 means the model keeps up with speech."}
+          {t.avgRtf(avgRtf.toFixed(2))}{" "}
+          {avgRtf > 1 ? t.rtfSlow : t.rtfFast}
         </p>
       )}
 
       {stage &&
         createPortal(
-          <div className="stage" role="dialog" aria-label="Stage transcript">
+          <div
+            className="stage"
+            role="dialog"
+            aria-label="Stage transcript"
+            lang={lang === "zh" ? "zh-TW" : "en"}
+          >
           <div className="stage__bar">
             <span className={`stage__dot ${recording ? "is-live" : ""}`} />
             <span className="stage__label">
-              {recording ? "Listening" : "Paused"}
+              {recording ? t.stageListening : t.stagePaused}
               {" · "}
-              {mode === "tuned" ? "adapted model" : "fast mode"}
+              {mode === "tuned" ? t.stageTuned : t.stageFast}
             </span>
             <div className="stage__meter" aria-hidden="true">
               <div
@@ -472,21 +492,21 @@ export function LiveTranscribe() {
               className="stage__btn"
               onClick={recording ? stop : start}
             >
-              {recording ? "Stop" : "Start"}
+              {recording ? t.stageStop : t.stageStart}
             </button>
             <button
               type="button"
               className="stage__btn"
               onClick={() => setStage(false)}
             >
-              Exit (Esc)
+              {t.stageExit}
             </button>
           </div>
 
           <div className="stage__body">
             {done.length === 0 ? (
               <p className="stage__wait">
-                {recording ? "Listening…" : "Press Start and speak."}
+                {recording ? t.listeningHint : t.stageWait}
               </p>
             ) : (
               <p className="stage__text">
@@ -506,6 +526,14 @@ export function LiveTranscribe() {
 
       <style>{`
         .live-card{padding:26px 24px}
+        .live-head{display:flex;align-items:center;justify-content:space-between;
+          gap:12px}
+        .live-head h3{margin:0}
+        .live-langs{display:flex;gap:4px;flex:0 0 auto}
+        .live-lang{padding:5px 11px;border-radius:99px;font:inherit;font-size:12px;
+          font-weight:700;cursor:pointer;color:inherit;
+          background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.45)}
+        .live-lang.is-on{background:#fff;color:var(--ink);border-color:#fff}
         .live-sub{margin:6px 0 16px;font-size:14px;line-height:1.5;opacity:.95}
         .live-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
         .live-mode{display:flex;flex-direction:column;gap:2px;text-align:left;
