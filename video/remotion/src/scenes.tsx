@@ -486,7 +486,7 @@ export const End: React.FC = () => {
           Andrew Shih · Alexander Du · Srihari Kumaresan · Luis Cruz Mondragon<br />2026 Presidential Hackathon · International Track</div></Pop>
       </AbsoluteFill>
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 26, textAlign: "center", font: `500 15px ${F.body}`, color: "#8a8277" }}>
-        Music: “Your Breath” by Eugenio Mininni (Mixkit). Patient voice: MDSC / AISHELL-6B (CC BY-NC 4.0).
+        Music: “Cafe” by Lukrembo (freetouse.com). Patient voice: MDSC / AISHELL-6B (CC BY-NC 4.0).
       </div>
     </AbsoluteFill>
   );

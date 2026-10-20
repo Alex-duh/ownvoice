@@ -75,7 +75,7 @@ const musicVol = (f: number) => {
   for (const [a, b] of ducks) duck = Math.max(duck, interpolate(f, [a - 12, a, b, b + 15], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
   const fadeIn = interpolate(f, [0, 20], [0, 1], { extrapolateRight: "clamp" });
   const fadeOut = interpolate(f, [TOTAL - 75, TOTAL - 5], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  return 0.42 * (1 - 0.78 * duck) * fadeIn * fadeOut;
+  return 0.36 * (1 - 0.75 * duck) * fadeIn * fadeOut;
 };
 
 export const Demo: React.FC = () => (
