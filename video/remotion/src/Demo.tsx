@@ -102,7 +102,7 @@ export const Demo: React.FC = () => (
     <Sequence from={voice.site.at} durationInFrames={voice.site.len}><Audio src={staticFile("audio/site-severe.wav")} volume={1} /></Sequence>
     <Sequence from={voice.sim.at} durationInFrames={voice.sim.len}><Audio src={staticFile("audio/sim.wav")} volume={1} /></Sequence>
     <Sequence from={voice.call.at} durationInFrames={Math.min(voice.call.len, at("app") + 10 - voice.call.at)}><Audio src={staticFile("audio/call.wav")} volume={1} /></Sequence>
-    <Sequence from={voice.app.at} durationInFrames={voice.app.len}><Audio src={staticFile("audio/app.wav")} volume={1} /></Sequence>
+    <Sequence from={voice.app.at} durationInFrames={voice.app.len}><Audio src={staticFile("audio/app.wav")} volume={0.5} /></Sequence>
     {sfx.map((c, i) => (
       <Sequence key={i} from={Math.max(0, Math.round(c.at))} durationInFrames={60}><Audio src={staticFile(c.src)} volume={c.vol ?? 0.5} /></Sequence>
     ))}

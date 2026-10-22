@@ -1,9 +1,9 @@
 # OwnVoice: final presentation script (v2, 2026-10-21)
 
-Matches `OwnVoice-Final-Deck-v2.pptx`: 15 slides, plus an appendix for Q&A. The same text is in each slide's speaker notes.
+Matches `OwnVoice-Final-Deck-v2.pptx`: 15 slides, plus 4 hidden backup slides (16–19) for Q&A. Hidden slides are skipped in the slide show; to show one, jump to it by number. The same text is in each slide's speaker notes.
 
-- Spoken length: **974 words, about 7:12 at 135 words per minute** (the 7-minute slot).
-- Time per speaker: Alex about 99 s, Andrew about 120 s, Srihari about 100 s, Luis about 113 s.
+- Spoken length: **984 words, about 7:16 at 135 words per minute** (the 7-minute slot).
+- Time per speaker: Alex about 99 s, Andrew about 120 s, Srihari about 100 s, Luis about 117 s.
 - Format: 7-minute presentation, then the 2-minute demo video (played separately, after the last slide), then 1 minute of questions and 2 minutes of answers. The deck has no demo slide; the last line hands off to the video.
 
 ## What changed from v1, and why
@@ -95,9 +95,9 @@ Since the preliminary round, we have tested on real patients, shipped the extens
 
 *Switch slides.*
 
-### Slide 11: Responsible AI (Luis, about 33 s)
+### Slide 11: Responsible AI (Luis, about 37 s)
 
-Live captions run on your own machine; audio is decoded in memory and never stored, so a hospital can run it inside its own network. We train only on openly licensed speech and use patient data strictly under its licence, by speaker ID only. In the app, research sharing is opt-in with written consent. We report every speaker, including the one who got worse. And captions assist the speaker; they are not a diagnosis.
+As the app's privacy screen shows, you stay in control. Live captions run on your own machine; audio is decoded in memory and never stored, so a hospital can run it inside its own network. We train only on openly licensed speech and use patient data strictly under its licence, by speaker ID only. In the app, research sharing is opt-in with written consent. We report every speaker, including the one who got worse. And captions assist the speaker; they are not a diagnosis.
 
 *Switch slides.*
 
@@ -124,3 +124,10 @@ And we are in this for the long run. The day this competition ends, we start bui
 Thank you. We are team OwnVoice. Everything is at ownvoice dot vercel dot app, and our code is on GitHub. We will now show you the system working.
 
 *Switch slides.*
+
+## Backup slides (hidden; jump to them during Q&A)
+
+- 16, the pipeline end to end: "How does the whole system fit together?"
+- 17, how STER is computed: "How is the tone error rate calculated?"
+- 18, characters and tone by severity: "Does tone actually improve?"
+- 19, real patients by severity band: "How does it do on severe patients? Is it significant?"
