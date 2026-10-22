@@ -71,9 +71,15 @@ npm ci
 npm run dev          # http://localhost:5173
 ```
 
-The demo section will report the model server unreachable until you start the
-API below. Everything else — the exploded view, the tone-flattening
-interaction, all measured figures — is client-side and works standalone.
+The interactive demo lives at **http://localhost:5173/#/research**, not on the
+front page. The home route is the human-facing landing page; file upload, the
+severity player, the record button, live transcription and stage mode are all
+on the research route.
+
+That demo will report the model server unreachable until you start the API
+below, and it falls back to an embedded Streamlit iframe while the health check
+fails. Everything else — the exploded view, the tone-flattening interaction,
+all measured figures — is client-side and works standalone.
 
 ### API + website
 
