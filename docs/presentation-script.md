@@ -1,221 +1,126 @@
-# OwnVoice — 5-minute presentation script
+# OwnVoice: final presentation script (v2, 2026-10-21)
 
-Team script, corrected. Matches OwnVoice-Presentation-Final.pptx (6 slides); the same text is in each slide's speaker notes.
+Matches `OwnVoice-Final-Deck-v2.pptx`: 15 slides, plus an appendix for Q&A. The same text is in each slide's speaker notes.
 
----
+- Spoken length: **974 words, about 7:12 at 135 words per minute** (the 7-minute slot).
+- Time per speaker: Alex about 99 s, Andrew about 120 s, Srihari about 100 s, Luis about 113 s.
+- Format: 7-minute presentation, then the 2-minute demo video (played separately, after the last slide), then 1 minute of questions and 2 minutes of answers. The deck has no demo slide; the last line hands off to the video.
 
-## Slide 1 — Title and hook  [Andrew · 0:00–0:45]
+## What changed from v1, and why
 
-Good morning. We are Team OwnVoice.
+- **Mr. Lin is the human thread.** He is introduced on slide 3 and returns on slide 13 for a before-and-after of his day. Alex's dad (James) opens and closes the story. Mr. Lin is a composite case, and the slide says so.
+- **The technical level matches the original Final deck.** Terms are used and briefly explained, not replaced by analogies. Slide 7 names every stage: WORLD vocoder (F0, spectral envelope, aperiodicity), symptom-matched perturbations, matched pairs, Whisper-small fine-tuning, speaker-disjoint split, CER and STER.
+- **The theme is named on purpose (slide 5):** "digital inclusion in the AI era" and "smarter public services". One preliminary judge marked us as not matching the theme.
+- **Working today (slide 6)** shows real screenshots: the live research demo, the extension on a call with a real patient's voice, and the app design.
+- **Real patients (slide 9):** 21 speakers, 420 recordings, 25% fewer character errors, better for 20 of 21. This answers the judges' "clinical-scale generalization" caveat, and it doubles as a cross-border check.
+- **Since the preliminary round (slide 10)** covers Implementation and verification, which is 30% of the finals score.
+- **Responsible AI (slide 11)** was the biggest gap in the judges' feedback.
+- **Public-service integration (slide 12):** a judge called us "assistive for individuals rather than public-service".
+- **Corrected claims:**
+  - "Helps most where speech is worst" is gone. It held only on simulated speech; on real patients the gains were mild 28%, moderate 31% and severe 20%.
+  - "0.5 s per second of speech" is replaced by the measured "about 3 s after the sentence ends".
+  - "Nothing is uploaded" is now "live captions run on your own machine; audio is never stored".
+  - "About 50% of stroke survivors" is gone, because our own source says roughly a quarter of ischaemic strokes.
+  - The results chart now reads −41% for severe, matching the text (exact figure: 41.5%).
 
-If a speech engine transcribes "I want to sell my stocks" as "I want to buy my stocks," a standard error metric scores it 80 percent correct: one character out of five is wrong. You would probably say that software is broken. You would probably lose your money too.
+## Q&A prep (likely questions)
 
-In Mandarin, this isn't a thought experiment. It's the daily reality for people with dysarthria. 賣, mài, means to sell. 買, mǎi, means to buy. They share the exact same consonants and vowels. Pitch is the only difference. When a stroke or oral cancer flattens someone's pitch, standard metrics count the mistake as just another wrong character. They can't tell you that tone was the cause.
+- **"Does the app work today?"** It is designed, and development starts the day after the competition. Today, the live research demo and the Chrome extension run on our real model.
+- **"Does the website work without your laptop?"** Uploads work on the public URL through our hosted demo (20 to 60 seconds per clip). Live captions and dysarthria simulation need the model server running on a laptop, which is how we demo them.
+- **"Were the real patients like Mr. Lin?"** Not exactly. The public dataset (MDSC / AISHELL-6B) covers cerebral palsy and Wilson's disease, and the recordings are short voice commands. That is why our next step is a consented pilot with head-and-neck and stroke patients.
+- **"Why did healthy speakers improve too?"** Part of the gain is general adaptation to Taiwanese Mandarin and short commands, and standard Whisper sometimes invents English. We report it rather than hide it.
+- **"How severe is still too severe?"** Severe speakers still see about 94 mistakes per 100 characters. That is a step forward, not a finished caption.
+- **"Where does audio go?"** For live captions (the extension, and later the app), it goes to a model server on the user's own machine, is processed in memory, and is never written to disk. The website's upload demo runs on our hosted demo server in the cloud. It is fine for trying a recording, but it is not the private path, and it is slow on a free CPU (about 20 to 60 seconds per clip).
+- **"Which voice is in the demo?"** It is a real speaker from MDSC (ID DM0005), whom the dataset rates as mild. We used it under the CC BY-NC 4.0 licence.
 
----
+## Script
 
-## Slide 2 — The problem and scale  [Alex · 0:45–1:30]
+### Slide 1: Title (Alex, about 35 s)
 
-In Taiwan, the medical burden is immense. Roughly 49,000 strokes occur every year, and about one in four leaves the survivor with dysarthria, which is over 12,000 people. Oral cavity cancer, driven mainly by betel nut, is the fourth leading cause of male cancer death in Taiwan.
+Good afternoon, we are team OwnVoice from the United States. Let me start with someone close to me. About ten years ago my dad, James, had a stroke. It left him with dysarthria, a weakening of the muscles we use to speak. Overnight, phone menus, voice assistants and counters stopped understanding him. And he is one of millions. Now look at these two words. Same sounds. Only the pitch differs. One means to buy. The other means to sell.
 
-As public services, telehealth and everyday devices shift to voice-first interfaces, these patients face a double exclusion in the AI era: social and technological. Stock Whisper gets 89.3 percent of characters right on clear speech, but collapses to 52.6 percent on our simulated severe dysarthria. And across our literature review, zero dysarthria papers score tone as its own failure.
+*Switch slides.*
 
----
+### Slide 2: Tone (Andrew, about 22 s)
 
-## Slide 3 — What we built  [Srihari · 1:30–2:05]
+Mandarin has four lexical tones, each a pitch contour. In English, a wrong pitch gives you an accent. In Mandarin, it gives you a different word. Dysarthria compresses pitch range before it degrades articulation, so the tone, the part that carries the meaning, is the first thing a patient loses.
 
-To close this gap, we built two things. First, STER, the Segmental Tone Error Rate. STER counts tone mistakes only on syllables where the consonant and vowel were already recognised correctly, which isolates pitch failure from general articulation errors.
+*Switch slides.*
 
-Second, we fine-tuned OpenAI's Whisper-small on simulated dysarthric Mandarin from 91 speakers. The splits are strictly speaker-disjoint, so no speaker's voice appears in both training and test. We want to be clear up front: every dysarthric sample here is simulated.
+### Slide 3: Meet Mr. Lin (Srihari, about 33 s)
 
----
+To make this concrete, meet Mr. Lin. He is forty-eight and works in Tainan. He chewed betel nut for twenty years. Oral-cancer surgery saved his life, and left him with dysarthria. It is a motor problem, not a cognitive one: he knows exactly what he wants to say. But at home, his family guesses. His bank's voice menu cannot recognise him. Every counter becomes an argument. And at work, meetings move on without him.
 
-## Slide 4 — Results  [Luis · 2:05–2:40]
+*Switch slides.*
 
-Fine-tuning raised overall character accuracy from 80.9 to 86.2 percent, cutting errors by 27.7 percent relative. Severe dysarthria improved the most, with character errors down 41.5 percent.
+### Slide 4: Scale (Srihari, about 27 s)
 
-But here is our key finding: STER barely moved. It changed by only negative 0.0041. Fine-tuning fixed the characters but left tone accuracy where it was. That tells us tone has to be modelled explicitly; it won't come for free. One caveat: these are results on simulated speech, so they compare methods. They are not clinical claims.
+Mr. Lin is not rare. In Taiwan, stroke alone causes about twelve thousand new cases of dysarthria a year. Oral cancer is the fourth biggest cancer killer of men, and Parkinson's prevalence has risen almost four hundred percent since 2000. Yet when we began, there were zero openly licensed Mandarin dysarthric speech corpora, so speech recognisers simply never learned these voices.
 
----
+*Switch slides.*
 
-## Slide 5 — Under the hood  [Andrew · 2:40–3:30]
+### Slide 5: The theme (Srihari, about 28 s)
 
-Here's how it works under the hood.
+That is why this is about digital inclusion in the AI era. Voice is becoming the front door to services: phone menus, AI assistants, automatic captions, telehealth, public hotlines. Each one fails on dysarthric speech. OwnVoice adapts speech AI to these speakers. That is digital inclusion. And services can serve them through a caption layer, without redesigning anything. That is a smarter public service.
 
-First, we simulate. There's no openly licensed Mandarin dysarthria corpus, so we take clear speech from Common Voice and AISHELL-3 and run it through the WORLD vocoder. The vocoder splits a voice into pitch, vocal-tract shape and breath noise. We squeeze the pitch toward the speaker's average, blur the formants and add breathiness, then rebuild the audio slower and less steady. At severe, only 20 percent of the pitch range survives.
+*Switch slides.*
 
-Second, the model. Whisper-small turns audio into a spectrogram and runs it through 12 encoder layers. Then 12 decoder layers write the text one token at a time.
+### Slide 6: Working today (Andrew, about 37 s)
 
-Third, training. We split by speaker first: 73 speakers for training, 18 never heard. The whole pipeline trains on a single consumer GPU.
+Here is what works today. First, a live research demo on our website. Hear a sentence at four severities, simulate dysarthria on your own voice, compare stock Whisper with OwnVoice, and run live captions. Second, a Chrome extension, downloadable now, that captions any tab or the microphone. Here it is on a live call with a real patient's voice. Third, the OwnVoice app, with live captions, a one-tap Show mode and privacy controls. It is coming to the App Store and Google Play.
 
-If asked: pitch is never an explicit model input; it only survives as harmonic spacing in the low Mel bands, and the character loss can be lowered through context, which is why STER does not move.
+*Switch slides.*
 
----
+### Slide 7: System (Andrew, about 39 s)
 
-## Slide 6 — Asks, roadmap and close  [Alex · 3:30–4:25]
+No open corpus existed, so we simulate one. We take openly licensed clear speech, Common Voice Taiwan and AISHELL-3, and use the WORLD vocoder to split each clip into its pitch contour, spectral envelope and aperiodicity. We damage each one to match a clinical symptom: monopitch, formant smearing, breathiness, jitter and slower rate. Three thousand matched clean and damaged pairs fine-tune Whisper-small. We test on held-out speakers, using character error rate and our own tone error rate, STER, which counts tone mistakes only where the sounds were right.
 
-To move from a working prototype to real patient impact, we have four specific asks for our mentors today. Priority one is a field validation partner. We need 50 to 100 authentic patient recordings from an oncology or speech pathology department, such as Chi Mei Hospital. With that access, we can retrain on real human speech before the October 22 finals.
+*Switch slides.*
 
-Second, regulatory guidance on Taiwan FDA pathways for speech-processing medical software. Third, open data infrastructure: a consented, openly licensed Taiwanese dysarthria speech corpus.
+### Slide 8: Simulated results (Andrew, about 22 s)
 
-Fourth, scale. Mandarin is only one tonal language. Taiwanese Hokkien, Hakka, Cantonese and Thai all carry meaning in tone, and STER carries over to any language with a syllable-and-tone transcription. We are asking for speech data in those languages, and for partners to deploy OwnVoice where people actually use voice: telehealth, hospitals and public services.
+On that held-out test, stock Whisper's error climbs as speech gets worse. OwnVoice's stays far flatter: forty-one percent fewer character errors on severe speech, and eighty-six percent of characters correct overall, up from eighty-one. On an ordinary laptop CPU, a caption lands about three seconds after the sentence ends.
 
-**[Srihari · 4:25–5:00]**
+*Switch slides.*
 
-Over the next month, we will test our simulator against authentic patient recordings, retrain our model, and consult on TFDA pathways. At finals, we aim to present a model validated on real patient speech, a regulatory roadmap, and clinical partnership letters.
+### Slide 9: Real patients (Luis, about 32 s)
 
-After that: a clinical pilot, a TFDA filing, and more tonal languages. Our vision is for OwnVoice to become the reference for tone-aware speech technology.
+Simulation only proves so much, so we verified on real patients: four hundred and twenty random recordings from twenty-one dysarthric speakers, mild to severe, analysis pre-registered. OwnVoice cut character errors by twenty-five percent and was better for twenty of twenty-one patients. It is also a cross-border check: trained on mostly Taiwanese speech, tested on an independent dataset. We report the limits too: healthy speakers improved as well, and severe speech is still hard.
 
-Learn more at our website and repository.
+*Switch slides.*
 
-Luis: To include every voice of Taiwan — and their money too.
+### Slide 10: Since the preliminary round (Luis, about 24 s)
 
-Alex: Thank you for listening. 謝謝.
+Since the preliminary round, we have tested on real patients, shipped the extension with a public download and fixed the bugs that real patient audio exposed, turned our research site into a live demo, and designed the app. We also found a bug in our own tone metric, fixed it, re-ran everything, and reported it.
 
-If asked about languages: today the STER code uses Mandarin pinyin. Each new language needs its own syllable-and-tone converter (Tâi-lô for Hokkien, Jyutping for Cantonese) and its own speech data, which is exactly the ask.
+*Switch slides.*
 
+### Slide 11: Responsible AI (Luis, about 33 s)
 
----
+Live captions run on your own machine; audio is decoded in memory and never stored, so a hospital can run it inside its own network. We train only on openly licensed speech and use patient data strictly under its licence, by speaker ID only. In the app, research sharing is opt-in with written consent. We report every speaker, including the one who got worse. And captions assist the speaker; they are not a diagnosis.
 
-# Technical depth
+*Switch slides.*
 
-Two things here: a longer version of slide 3 you can swap in if you have the
-time, and a reference appendix for when a technical judge pushes. Every number
-below is from the code, not from memory — `src/dysarthria_sim.py`,
-`src/train_asr.py`, `src/metrics.py`.
+### Slide 12: Public services (Luis, about 24 s)
 
-## Slide 3 — deep version  [~80 seconds, costs you 35]
+This goes beyond one person. In hospitals, before and after surgery and in speech therapy, where STER can track tone recovery. At counters and hotlines like 1999, where staff simply read the captions. In telehealth, which the extension already covers. And for banks and telecoms, so customers like Mr. Lin are not dropped.
 
-Only use this if you cut slide 5 down to a single sentence, or if the audience
-is technical.
+*Switch slides.*
 
-We built two things: a metric and a model.
+### Slide 13: Before and after (Alex, about 34 s)
 
-The metric first. To score a Mandarin transcript we convert both the reference
-and the prediction to pinyin with tone digits, so 買 becomes "mai3" and 賣
-becomes "mai4". Then we split every syllable into two parts: the segment,
-"mai", and the tone, 3 or 4.
+So, back to Mr. Lin. Before, his family guessed. Now his phone shows his words. Before, video visits with his doctor were a struggle. Now captions appear as he speaks. Before, every counter was an argument. Now he taps Show, and the clerk reads it. Before, meetings moved on without him. Now his coworkers read along. Same man, same voice. The technology finally listens. That is what we want for my dad, and everyone like him.
 
-Here is the subtle part. Our first version aligned reference and prediction on
-the full syllable, tone included, and it was wrong. If the model inserted a
-word, the alignment shifted, the tone comparisons went out of phase, and real
-tone errors disappeared from the score — and they disappeared more on the worse
-audio, which is exactly backwards. So we now run edit-distance alignment on the
-segments alone. Tone cannot influence where things line up. Then, on every
-syllable where the segment already matched, we ask one question: is the tone
-right? That ratio is STER.
-
-Now the model. We take Whisper-small, 244 million parameters, and fine-tune it
-on paired data we generate. The generator runs the WORLD vocoder, which
-decomposes speech into three streams: the pitch contour, the spectral envelope
-and the aperiodicity. We perturb each stream separately, then resynthesise. Six
-perturbations, three severities. The important one is F0 compression toward the
-speaker's own mean — at severe we pull 80 percent of the way to monotone, which
-is precisely what destroys tone.
-
-Training runs at learning rate 1e-5, batch size 8 with gradient accumulation 2,
-on one consumer GPU; epoch 1 was best and later epochs overfit. We keep clean
-speech in the training mix so the model does not forget normal Mandarin. Splits are speaker-disjoint with
-a fixed seed, so nothing leaks.
-
-## Appendix A — the simulation, exactly
-
-WORLD (`pyworld`) decomposes a waveform into F0 (pitch per frame), SP (spectral
-envelope, the timbre) and AP (aperiodicity, the noise component). We modify
-those three arrays and resynthesise. That is what keeps the voice recognisably
-the same person: WavLM speaker similarity is 0.907 between clean and severe.
-
-| Parameter | Mild | Moderate | Severe | Models |
-|---|---|---|---|---|
-| `rate` | 0.90 | 0.75 | 0.60 | Reduced speaking rate, near-universal in dysarthria |
-| `prosody` | 0.30 | 0.55 | 0.80 | F0 range compression toward the speaker mean — monopitch |
-| `jitter` | 0.010 | 0.025 | 0.045 | Cycle-to-cycle F0 noise, laryngeal control loss |
-| `smear` | 0.15 | 0.35 | 0.55 | Spectral envelope smoothing, blurred formants |
-| `breathy` | 0.10 | 0.25 | 0.40 | Raised aperiodicity, incomplete glottal closure |
-| `amp` | 0.05 | 0.12 | 0.20 | Slow amplitude instability, respiratory support loss |
-
-`prosody` is the one that matters for this project. It rewrites each voiced
-frame as `mean + (f0 - mean) * (1 - strength)`. At 0.80 the contour keeps only
-a fifth of its excursion, so a rising tone and a falling tone start to look the
-same to the model.
-
-The presets are deliberately conservative. Over-perturbing produces audio no
-model can recover, which teaches the model nothing.
-
-Validation, from `src/verify_sim.py`: F0 standard deviation falls monotonically
-with severity, 2.545 to 1.173 semitones; spectral flux falls; duration rises.
-Those are the published acoustic correlates of real dysarthria, so the
-simulation moves the right things in the right direction. Jitter is the one
-perturbation we have not validated against a reference measurement, and we say
-so.
-
-## Appendix B — the metric, exactly
-
-Three numbers come out of `score()`:
-
-- CER — character error rate, standard Levenshtein over characters. Chinese has
-  no word delimiters, so CER is the correct unit; WER would be meaningless.
-- TER — tone error rate over the whole tone sequence, including syllables whose
-  sounds were wrong.
-- STER — tone error rate restricted to syllables whose initial and final were
-  already correct.
-
-TER and STER differ because TER mixes two failures together. If the model
-mishears the syllable entirely, its tone was never really in play. STER asks
-the narrower and more diagnostic question: when the model heard the sounds
-correctly, did it also hear the pitch correctly?
-
-Neutral tone is mapped to 5 rather than left blank, so it participates in
-scoring instead of silently matching everything.
-
-The alignment bug is worth telling, because it shows the metric was tested
-rather than asserted. Original behaviour, from the docstring in
-`src/metrics.py`: reference 我要買東西 against prediction 我就要買東西 returned
-STER 0.000 — an inserted character pushed everything out of phase and the tone
-error vanished. Aligning on segments first fixed it.
-
-## Appendix C — training and decoding, exactly
-
-| Setting | Value | Why |
-|---|---|---|
-| Base model | `openai/whisper-small`, ~244M params | Fits one consumer GPU; larger models did not fit the budget |
-| Epochs | 3 run, epoch 1 kept | Epochs 2–3 overfit (train loss 0.002, eval CER rose) |
-| Learning rate | 1e-5, warmup ratio 0.1 | Standard for Whisper fine-tuning; higher wrecks the decoder |
-| Batch | 8, gradient accumulation 2, gradient checkpointing | Effective batch 16 inside 8 GB of VRAM |
-| Precision | fp16 on CUDA | Speed and memory |
-| Checkpointing | best model at end, eval each epoch | Guards against a late-epoch collapse |
-| Clean data | kept in the training mix | Without it the model forgets normal speech |
-| Splits | speaker-disjoint, seed 0 | No speaker appears on both sides |
-| Decoder language | forced to `zh` | Otherwise Whisper sometimes emits the wrong script |
-
-Decoding at inference: greedy, `no_repeat_ngram_size=4`, `repetition_penalty=1.15`.
-That is not cosmetic. The first fine-tune hallucinated repeating loops on severe
-audio and scored CER 2.843 — nearly thirty times worse than doing nothing,
-because the model emitted far more characters than the reference contained.
-Blocking repeated 4-grams stopped it.
-
-## Appendix D — what a sceptical reviewer should attack, and our answer
-
-**"You are evaluating on your own simulation, so of course it improves."**
-Correct, and that is why the headline framing is the negative result. If the
-setup were self-serving, STER would have improved too. It did not.
-
-**"Speaker leakage."**
-`build_splits` partitions by speaker before anything else, seed 0, 20 percent
-held out. Test speakers were never seen.
-
-**"Whisper already saw Common Voice in pretraining."**
-Likely true, and it works against us, not for us: the baseline is stronger than
-it would be on unseen data, so the measured gain is conservative.
-
-**"Why not train on real data?"**
-No openly licensed Mandarin dysarthria corpus exists. MDSC and CDSD are behind
-signed licences with multi-week approval. Unlicensed re-uploads of TORGO and
-UASpeech circulate freely and we refuse to touch them — patient medical data,
-and an explicit disqualification criterion.
-
-**"Is the improvement just the model getting better at the language model, not
-the acoustics?"**
-Partly, almost certainly — that is the honest reading of CER improving while
-STER does not. A stronger language prior fixes characters through context. It
-cannot fix tone, because tone is acoustic. That is the finding.
+*Switch slides.*
+
+### Slide 14: Commitment and policy (Alex, about 30 s)
+
+And we are in this for the long run. The day this competition ends, we start building the app. We will expand to Hokkien, Cantonese, Vietnamese and Thai, seek a consented hospital pilot, and build the first open Mandarin dysarthric speech database. We also propose two policies for Taiwan: a speech functional outcome field in the National Cancer Registry, and an open, consented Taiwanese dysarthria speech corpus.
+
+*Switch slides.*
+
+### Slide 15: Thank you (Srihari, about 12 s)
+
+Thank you. We are team OwnVoice. Everything is at ownvoice dot vercel dot app, and our code is on GitHub. We will now show you the system working.
+
+*Switch slides.*

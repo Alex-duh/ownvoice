@@ -1,6 +1,6 @@
 # OwnVoice — project guide for Claude
 
-Last updated 2026-10-19. The code wins over this file. If they disagree, fix this file.
+Last updated 2026-10-21. The code wins over this file. If they disagree, fix this file.
 
 ## What this is
 
@@ -20,18 +20,19 @@ Alexander Du.
 | Thing | Location | Notes |
 |---|---|---|
 | Canonical repo | https://github.com/andrewshih0407/ownvoice (`upstream`) | Alex's fork is `origin` (Alex-duh/ownvoice) |
-| **Product site (canonical URL)** | **https://ownvoice.vercel.app** | Static `product-site/`. It's Alex's Vercel project `ownvoice` (team alex-dudu-projects1). Since 2026-10-19 it's deployed from the CLI: `cd product-site && npx vercel deploy --prod`. `product-site/vercel.json` overrides the project's Vite preset to plain static. It is not git-connected, so pushes do not deploy |
+| **Product site (canonical URL)** | **https://ownvoice.vercel.app** | Static `product-site/`. It's Alex's Vercel project `ownvoice` (team alex-dudu-projects1). Since 2026-10-19 it's deployed from the CLI: `cd product-site && npx vercel deploy --prod`. `product-site/vercel.json` overrides the project's Vite preset to plain static. It is not git-connected, so pushes do not deploy. Since 2026-10-21 it also serves **Andrew's research demo at `/research/`** (a built copy of `site/`, from the HF Space build: `product-site/research/index.html` + `product-site/assets/`), an upload box, and an "OwnVoice app, coming soon" section |
 | Andrew's copy of the product site | https://ownvoice-three.vercel.app | Same `product-site/` code, deployed by Andrew. It lacks the download button until he redeploys |
 | Older research site | `site/` (Vite + React) | Lost the ownvoice.vercel.app URL on 2026-10-19. Not currently deployed anywhere by Alex; `vercel rollback` restores it |
 | Older HF static site | https://anonymous6623-ownvoice.static.hf.space | Still linked from README.md |
 | Streamlit demo (model runs here) | https://appapppy-m7fpkveuhxbkxapu2bbkdg.streamlit.app | Kept awake by `.github/workflows/keep-awake.yml` |
 | Fine-tuned model | https://huggingface.co/anonymous6623/ownvoice-asr | Used by `streamlit_app.py` |
-| Pitch deck (long version, 12 slides) | `~/Downloads/OwnVoice-Final-Deck.pptx` (not in repo) | Script is about 7.5 minutes |
+| **Finals deck (2026-10-21)** | `~/Documents/projects/ownvoiceHackathon/OwnVoice-Final-Deck-v2.pptx` (not in repo) | 15 slides + 5 appendix, script in the notes. Built by `build_deck.py` in the session scratchpad (not kept). Older decks in the same folder. The 2-minute demo video plays AFTER the 7-minute talk; the deck has no demo slide |
 | Chrome extension | `extension/` (merged from upstream branch `product-site-and-extension`) | MV3 side panel with mic or tab capture (`tabCapture`) and an EN/中文 UI. It defaults to `http://localhost:7860`. **The mic path was verified end to end on 2026-10-19** (see `video/`). Tab capture is still untested |
 | Extension download | `product-site/downloads/ownvoice-extension.zip`, built by `scripts/pack-extension.sh` | Built from the *committed* `extension/` via `git archive`. Re-run and commit after every extension change |
-| 5-minute presentation script | `docs/presentation-script.md` (same branch) | Matches the 6-slide deck OwnVoice-Presentation-Final.pptx |
+| Finals script (7 min, 4 speakers) | `docs/presentation-script.md` (copy: `ownvoiceHackathon/OwnVoice-Script-v2.md`) | Matches Final-Deck-v2. Mr. Lin (a composite case) is the thread; Alex opens with his dad |
 | Demo video plan | `docs/demo-video-plan.md` | v2: the 2-minute product-demo video, the tooling (Remotion skills), and the overlay verdict |
-| **Rendered demo video** | `~/Downloads/OwnVoice-demo.mp4` (not in git, 14 MB) | 1:57, 1080p. Built by `video/` (Playwright plus ffmpeg, fully scripted). `video/README.md` lists what's real and what's staged |
+| **Rendered demo video** | `~/Downloads/OwnVoice-demo-v8.mp4` (not in git) | 1:59, 1080p, Remotion (`video/remotion`). Scenes: tones, buy/sell, real matched pair, research demo recorded live (`video/record_research.mjs`), install, extension on a call with real patient DM0005, the app scene (`video/remotion/src/app.tsx`), privacy, end card |
+| **Phone app (designed, not built)** | `app/` (README + screens) | Screens are React components in `video/remotion/src/app.tsx`. Presented as "coming to the App Store". Never claim it runs on phones today or quote phone speeds |
 | Hackathon rules | `docs/handbook-2026.pdf` | Finals weights: Feasibility 30, Innovation 20, Social impact 20, Implementation and verification 30. The final review is "late October" 2026 |
 
 ## Architecture
@@ -152,6 +153,21 @@ Older React site: `cd site && npm install && npm run dev` (port 5173, API at loc
   Simplified Chinese, `<p>` marks a pause, and recordings 0001–0050 of each speaker are wake words.
 - `src/eval_mdsc.py` is the first real-patient test (pre-registered in its docstring).
   Results go to `runs/mdsc_eval.jsonl` and get written up in `docs/results.md`.
+
+## Finals prep (2026-10-21)
+
+- Judges' preliminary feedback to answer: theme fit, data privacy/security/bias, "assistive for
+  individuals rather than public-service integration", clinical-scale generalization, real-use UX.
+  Deck v2 has a slide for each.
+- **Andrew's research demo needs a model server.** Run it locally with the site and API on one
+  origin: download or build the site into a folder, then
+  `OWNVOICE_WEB=<that folder> OWNVOICE_MODEL=runs.nosync/asr_v1 python backend/app.py` and open
+  http://127.0.0.1:7860/#/research. On the public URL it falls back to the Streamlit demo.
+- The hosted Streamlit demo's upload was verified on 2026-10-21 (sample clip transcribed in about
+  30 s). It sleeps when idle; open it two minutes before presenting.
+- `site/node_modules` and `site/dist` are iCloud-evicted; reading them hangs. The HF Space build
+  (https://anonymous6623-ownvoice.static.hf.space) is the quickest source of a built site.
+- `/simulate` is seeded (`seed=0`), so re-calling it reproduces exactly what a page showed.
 
 ## Open items (2026-10-20)
 

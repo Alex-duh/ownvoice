@@ -7,6 +7,7 @@ import callMeta from "../public/footage/call.json";
 import siteMeta from "../public/footage/site.json";
 import callStock from "../public/footage/call_stock.json";
 import mdsc from "../public/footage/mdsc_summary.json";
+import researchMeta from "../public/footage/research.json";
 
 const ease = { extrapolateLeft: "clamp" as const, extrapolateRight: "clamp" as const, easing: Easing.inOut(Easing.cubic) };
 
@@ -249,6 +250,103 @@ export const Site: React.FC = () => {
   );
 };
 
+/* ============================================== 5b. research demo (live) */
+// Andrew's research demo (site/, #/research) recorded live against the real
+// model on a laptop (video/record_research.mjs). Real time where something is
+// heard or read; 2x through clicking and waiting.
+const rev = (label: string) => (researchMeta.events as any[]).find((e) => e.label === label).t as number;
+const RS_SEGS = (() => {
+  const a = rev("chip-severe") - 0.4, b = rev("ours") + 2.4, c = rev("simulate") + 0.25, d = rev("transcribe") - 0.5, e = rev("tr-done") + 0.2;
+  return [
+    { from: a, to: b, rate: 1 },
+    { from: b, to: c, rate: 2 },
+    { from: c, to: d, rate: 1 },
+    { from: d, to: e, rate: 2 },
+    { from: e, to: Math.min((researchMeta as any).duration - 0.1, rev("result") + 2.2), rate: 1 },
+  ];
+})();
+const segFrames = RS_SEGS.map((g) => Math.round(((g.to - g.from) / g.rate) * 30));
+export const RESEARCH_FRAMES = segFrames.reduce((n, x) => n + x, 0);
+// footage time -> scene frame (audio and SFX placement)
+export const researchFrameOf = (t: number) => {
+  let f = 0;
+  for (let i = 0; i < RS_SEGS.length; i++) {
+    const g = RS_SEGS[i];
+    if (t <= g.to || i === RS_SEGS.length - 1) return f + ((Math.max(t, g.from) - g.from) / g.rate) * 30;
+    f += segFrames[i];
+  }
+  return f;
+};
+export const researchEvent = rev;
+const researchKeys: Key[] = (() => {
+  const st = rev("stock"), ou = rev("ours"), up = rev("upload"), sm = rev("simulated"), tr = rev("transcribe"), rs = rev("result");
+  return [
+    { t: RS_SEGS[0].from, x: 960, y: 560, z: 1.12 }, { t: st - 0.4, x: 1330, y: 560, z: 1.4 }, { t: ou + 1.6, x: 1330, y: 640, z: 1.4 },
+    { t: up - 1.0, x: 960, y: 520, z: 1.0 }, { t: up + 0.3, x: 560, y: 520, z: 1.3 }, { t: sm - 0.6, x: 560, y: 620, z: 1.35 },
+    { t: sm + 3.4, x: 560, y: 640, z: 1.35 }, { t: tr, x: 1260, y: 560, z: 1.25 }, { t: rs - 0.8, x: 1430, y: 560, z: 1.25 },
+    { t: rs + 0.4, x: 1430, y: 560, z: 1.5 },
+  ];
+})();
+const researchLabels = [
+  { from: RS_SEGS[0].from, to: rev("stock") - 0.2, text: "The live demo: one sentence, made harder to understand" },
+  { from: rev("stock") - 0.2, to: RS_SEGS[1].from, text: "Standard Whisper: 44% of characters wrong · OwnVoice: 11%" },
+  { from: RS_SEGS[1].from, to: rev("sim-done") + 0.3, text: "Upload any clear recording, then simulate dysarthria" },
+  { from: rev("sim-done") + 0.3, to: RS_SEGS[3].from, text: "Our simulator: flattened pitch, blurred sounds, slower" },
+  { from: RS_SEGS[3].from, to: rev("tr-done") + 0.4, text: "Transcribe with OwnVoice" },
+  { from: rev("tr-done") + 0.4, to: 999, text: "Every tone right. Score: 86% of characters correct" },
+];
+
+const ResearchLayer: React.FC<{ seg: number }> = ({ seg }) => {
+  const f = useCurrentFrame();
+  const g = RS_SEGS[seg];
+  const t = g.from + (f / 30) * g.rate;
+  return (
+    <div style={{ width: 1600, height: 900, overflow: "hidden", position: "relative" }}>
+      <div style={{ width: 1920, height: 1080, transformOrigin: "0 0", transform: `scale(${1600 / 1920}) ${camera(researchKeys, t)}` }}>
+        <OffthreadVideo src={staticFile("footage/research.mp4")} trimBefore={Math.round(g.from * 30)} playbackRate={g.rate} muted style={{ width: 1920, height: 1080 }} />
+      </div>
+      {g.rate !== 1 && <div style={{ position: "absolute", right: 22, top: 18 }}><Chip bg={C.tangerine}>{g.rate}× speed</Chip></div>}
+    </div>
+  );
+};
+
+export const Research: React.FC = () => {
+  const f = useCurrentFrame();
+  const enter = useIn(0, { damping: 18, stiffness: 90 });
+  // current footage time, for the label
+  let acc = 0, t = RS_SEGS[0].from;
+  for (let i = 0; i < RS_SEGS.length; i++) {
+    if (f < acc + segFrames[i] || i === RS_SEGS.length - 1) { t = RS_SEGS[i].from + ((f - acc) / 30) * RS_SEGS[i].rate; break; }
+    acc += segFrames[i];
+  }
+  const label = researchLabels.find((l) => t >= l.from && t < l.to);
+  let start = 0;
+  return (
+    <AbsoluteFill>
+      <Iridescent />
+      <div style={{ position: "absolute", left: 160, top: 120, width: 1600, height: 900 + 44, borderRadius: 20, overflow: "hidden", background: "#fff",
+        boxShadow: "0 40px 100px rgba(20,17,15,.28)", transform: `perspective(2000px) rotateX(${(1 - enter) * 14}deg) translateY(${(1 - enter) * 80}px)`, opacity: enter }}>
+        <div style={{ height: 44, background: "#eceff1", display: "flex", alignItems: "center", gap: 8, padding: "0 16px" }}>
+          {["#ff5f57", "#febc2e", "#28c840"].map((c) => <div key={c} style={{ width: 12, height: 12, borderRadius: 6, background: c }} />)}
+          <div style={{ marginLeft: 20, flex: 1, maxWidth: 560, height: 28, borderRadius: 14, background: "#fff", font: `500 15px ${F.body}`, color: "#3c4043", display: "flex", alignItems: "center", padding: "0 14px" }}>OwnVoice live demo · model running on this laptop</div>
+        </div>
+        {RS_SEGS.map((_, i) => {
+          const from = start; start += segFrames[i];
+          return <Sequence key={i} from={from} durationInFrames={segFrames[i]} layout="none"><ResearchLayer seg={i} /></Sequence>;
+        })}
+      </div>
+      {label && (
+        <Sequence from={Math.max(0, Math.round(researchFrameOf(label.from)))} layout="none">
+          <Pop start={0} style={{ position: "absolute", left: 160, top: 46 }}><Chip>{label.text}</Chip></Pop>
+        </Sequence>
+      )}
+      <div style={{ position: "absolute", right: 160, top: 50, width: 640, textAlign: "right", font: `500 15px/1.4 ${F.body}`, color: "#8a8277" }}>
+        Recorded live: the OwnVoice research demo and our model on a laptop CPU. Uploaded clip: a healthy speaker (MDSC / AISHELL-6B control CM0024), degraded by our simulator.
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 /* ============================================================== 6. install */
 export const Install: React.FC = () => {
   const steps = [
@@ -354,7 +452,7 @@ const CallLayer: React.FC<{ tIn: number; rate?: number; badge: React.ReactNode }
         );
       })()}
       <div style={{ position: "absolute", left: 40, bottom: 18, maxWidth: 1380, font: `500 16px ${F.body}`, color: "rgba(255,255,255,.75)" }}>
-        Recorded live: real OwnVoice extension and model on a laptop CPU. Voice: a real speaker with dysarthria (MDSC / AISHELL-6B, CC BY-NC 4.0). Selected sentences; averages on the results slide.
+        Recorded live: real OwnVoice extension and model on a laptop CPU. Voice: a real speaker with dysarthria (MDSC / AISHELL-6B, CC BY-NC 4.0). Selected sentences; averages across 21 patients are in our presentation.
       </div>
     </AbsoluteFill>
   );
@@ -446,9 +544,9 @@ export const Results: React.FC = () => {
 /* ============================================================== 9. privacy */
 export const Privacy: React.FC = () => {
   const items = [
-    { h: "Runs on your laptop", p: "No special microphone, no new hardware.", c: C.cobalt },
-    { h: "Nothing uploaded", p: "Speech is transcribed on your machine and discarded.", c: C.tangerine },
-    { h: "Free and open source", p: "Mandarin today. Taiwanese Hokkien and Cantonese next.", c: C.grass },
+    { h: "Runs on your own device", p: "On the laptop already in the room. No account, no new hardware.", c: C.cobalt },
+    { h: "Audio is never stored", p: "Each sentence is captioned in memory, then discarded.", c: C.tangerine },
+    { h: "Open data, open code", p: "Trained on openly licensed speech. Anyone can check how it works.", c: C.grass },
   ];
   return (
     <AbsoluteFill>
